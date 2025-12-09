@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AirLink - Fast Transfer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* iOS-like Smoothness */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #F2F2F7; /* iOS System Gray 6 */
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .ios-card {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 24px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+        }
+
+        .ios-btn {
+            transition: transform 0.1s ease, opacity 0.2s;
+        }
+        .ios-btn:active {
+            transform: scale(0.96);
+            opacity: 0.8;
+        }
+        .ios-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .ios-input {
+            background: #E5E5EA; /* iOS System Gray 5 */
+            border: none;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+        }
+        .ios-input:focus {
+            background: #FFFFFF;
+            box-shadow: 0 0 0 2px #007AFF;
+            outline: none;
+        }
+
+        /* Animations */
+        .fade-in { animation: fadeIn 0.4s cubic-bezier(0.2, 0.8, 0.2, 1); }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .hidden-screen { display: none; }
+        
+        /* Progress Bar */
+        .progress-track {
+            background-color: #E5E5EA;
+            border-radius: 999px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            background-color: #007AFF;
+            height: 100%;
+            width: 0%;
+            transition: width 0.2s linear;
+        }
+    </style>
+</head>
+<body class="h-screen w-screen overflow-hidden flex flex-col items-center justify-center p-4">
+
+    <!-- Header / Logo -->
+    <div class="absolute top-8 left-0 w-full flex justify-center z-10">
+        <div class="flex items-center space-x-2">
+            <div class="bg-blue-500 p-2 rounded-xl text-white">
+                <i data-lucide="send" class="w-6 h-6"></i>
+            </div>
+            <h1 class="text-2xl font-bold tracking-tight text-gray-900">AirLink</h1>
+        </div>
+    </div>
+
+    <!-- MAIN CONTAINER -->
+    <div id="main-container" class="w-full max-w-md relative">
+
+        <!-- SCREEN: HOME -->
+        <div id="screen-home" class="flex flex-col space-y-4 fade-in">
+            <div class="ios-card p-8 text-center space-y-6">
+                <!-- Status Indicator -->
+                <div id="connection-status" class="text-xs font-semibold text-orange-500 flex items-center justify-center space-x-2">
+                    <i data-lucide="loader-2" class="w-3 h-3 animate-spin"></i>
+                    <span>Connecting to Server...</span>
+                </div>
+
+                <h2 class="text-xl font-semibold text-gray-800">Choose Action</h2>
+                
+                <button id="btn-mode-send" disabled onclick="showScreen('send')" class="ios-btn w-full bg-blue-500 text-white p-5 rounded-2xl flex items-center justify-between group">
+                    <div class="flex items-center space-x-4">
+                        <div class="bg-white/20 p-2 rounded-lg"><i data-lucide="upload-cloud" class="w-6 h-6"></i></div>
+                        <div class="text-left">
+                            <div class="font-bold text-lg">Send File</div>
+                            <div class="text-blue-100 text-sm">Create a code</div>
+                        </div>
+                    </div>
+                    <i data-lucide="chevron-right" class="w-5 h-5 text-blue-100"></i>
+                </button>
+
+                <button id="btn-mode-receive" disabled onclick="showScreen('receive')" class="ios-btn w-full bg-white text-gray-800 p-5 rounded-2xl flex items-center justify-between border border-gray-100 shadow-sm">
+                    <div class="flex items-center space-x-4">
+                        <div class="bg-gray-100 p-2 rounded-lg"><i data-lucide="download-cloud" class="w-6 h-6 text-gray-600"></i></div>
+                        <div class="text-left">
+                            <div class="font-bold text-lg">Receive File</div>
+                            <div class="text-gray-500 text-sm">Enter 6-digit code</div>
+                        </div>
+                    </div>
+                    <i data-lucide="chevron-right" class="w-5 h-5 text-gray-400"></i>
+                </button>
+            </div>
+            <p class="text-center text-gray-400 text-xs mt-4">P2P Encrypted • Max 100MB</p>
+        </div>
+
+        <!-- SCREEN: SEND -->
+        <div id="screen-send" class="hidden-screen ios-card p-6 fade-in relative">
+            <button onclick="resetApp()" class="absolute top-4 left-4 text-gray-400 hover:text-gray-600">
+                <i data-lucide="arrow-left" class="w-6 h-6"></i>
+            </button>
+            
+            <div class="mt-8 space-y-6 text-center">
+                
+                <!-- Step 1: Pick File -->
+                <div id="send-step-1">
+                    <div class="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4 text-blue-500">
+                        <i data-lucide="file-plus" class="w-10 h-10"></i>
+                    </div>
+                    <h2 class="text-xl font-bold mb-2">Select File</h2>
+                    <p class="text-gray-500 text-sm mb-6">Documents, Photos, or Videos up to 100MB</p>
+                    
+                    <input type="file" id="fileInput" class="hidden" onchange="handleFileSelect(this)">
+                    <label for="fileInput" class="ios-btn block w-full bg-blue-500 text-white font-semibold py-4 rounded-xl cursor-pointer">
+                        Choose File
+                    </label>
+                </div>
+
+                <!-- Step 2: Code Display -->
+                <div id="send-step-2" class="hidden">
+                    <p class="text-gray-500 text-sm mb-2">Share this code with the receiver</p>
+                    <div id="generated-code" class="text-5xl font-mono font-bold tracking-widest text-gray-800 mb-6 select-all">
+                        --- ---
+                    </div>
+                    <div class="flex items-center justify-center space-x-2 text-orange-500 bg-orange-50 py-2 px-4 rounded-lg text-sm mx-auto w-max">
+                        <i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i>
+                        <span>Waiting for receiver...</span>
+                    </div>
+                    <p class="text-xs text-gray-400 mt-4">Keep this screen open.</p>
+                </div>
+
+                <!-- Step 3: Progress -->
+                <div id="send-step-3" class="hidden">
+                    <div class="text-left mb-2 flex justify-between">
+                        <span class="font-semibold text-gray-700">Sending...</span>
+                        <span id="send-percent" class="text-blue-600 font-bold">0%</span>
+                    </div>
+                    <div class="progress-track h-3 w-full">
+                        <div id="send-bar" class="progress-fill w-0"></div>
+                    </div>
+                    <button onclick="resetApp()" id="send-done-btn" class="hidden mt-6 w-full bg-green-500 text-white font-bold py-3 rounded-xl ios-btn">
+                        Transfer Complete
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- SCREEN: RECEIVE -->
+        <div id="screen-receive" class="hidden-screen ios-card p-6 fade-in relative">
+            <button onclick="resetApp()" class="absolute top-4 left-4 text-gray-400 hover:text-gray-600">
+                <i data-lucide="arrow-left" class="w-6 h-6"></i>
+            </button>
+
+            <div class="mt-8 space-y-6 text-center">
+                <!-- Step 1: Input Code -->
+                <div id="receive-step-1">
+                    <div class="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-600">
+                        <i data-lucide="key-round" class="w-10 h-10"></i>
+                    </div>
+                    <h2 class="text-xl font-bold mb-4">Enter Code</h2>
+                    <input type="tel" id="code-input" maxlength="6" placeholder="000 000" 
+                        class="ios-input w-full text-center text-3xl font-mono font-bold py-4 tracking-widest text-gray-800 placeholder-gray-300 mb-6">
+                    
+                    <button onclick="startReceive()" class="ios-btn w-full bg-gray-900 text-white font-semibold py-4 rounded-xl">
+                        Connect
+                    </button>
+                </div>
+
+                <!-- Step 2: Connection Status -->
+                <div id="receive-step-2" class="hidden">
+                    <div class="animate-pulse flex flex-col items-center">
+                        <div class="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+                        <p class="font-medium text-gray-600">Connecting to sender...</p>
+                    </div>
+                </div>
+
+                <!-- Step 3: Downloading -->
+                <div id="receive-step-3" class="hidden">
+                    <div class="text-left mb-2 flex justify-between">
+                        <span class="font-semibold text-gray-700">Receiving...</span>
+                        <span id="receive-percent" class="text-blue-600 font-bold">0%</span>
+                    </div>
+                    <div class="progress-track h-3 w-full">
+                        <div id="receive-bar" class="progress-fill w-0"></div>
+                    </div>
+                    <div id="file-info" class="mt-4 text-sm text-gray-500"></div>
+                    <a id="download-link" class="hidden mt-6 block w-full bg-green-500 text-white font-bold py-3 rounded-xl ios-btn text-center">
+                        Save File
+                    </a>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- NOTIFICATION TOAST -->
+    <div id="toast" class="fixed bottom-10 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-6 py-3 rounded-full text-sm font-medium shadow-lg opacity-0 pointer-events-none transition-opacity z-50">
+        Message
+    </div>
+
+    <!-- SCRIPTS -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+        import { getFirestore, doc, setDoc, onSnapshot, updateDoc, deleteDoc, collection, arrayUnion } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+
+        // --- FIREBASE CONFIG (USER PROVIDED) ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyChp_DuOcvNw6k809mjwG-o1EqiBWo8x2A",
+            authDomain: "airlink-754f2.firebaseapp.com",
+            projectId: "airlink-754f2",
+            storageBucket: "airlink-754f2.firebasestorage.app",
+            messagingSenderId: "410579374648",
+            appId: "1:410579374648:web:1f153598f4ab66ab77cccd"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        // --- AUTH & STATE ---
+        const initAuth = async () => {
+            try {
+                // FORCE ANONYMOUS: Since user provided keys, we skip custom token logic to prevent mismatch errors.
+                console.log("AirLink: Attempting Anonymous Auth...");
+                await signInAnonymously(auth);
+            } catch (e) {
+                console.error("Auth failed:", e);
+                window.showToast("Server Error: Could not sign in.");
+                updateStatus(false, "Auth Failed");
+            }
+        };
+
+        function updateStatus(isReady, msg) {
+            const el = document.getElementById('connection-status');
+            const btn1 = document.getElementById('btn-mode-send');
+            const btn2 = document.getElementById('btn-mode-receive');
+            
+            if (isReady) {
+                el.innerHTML = '<span class="text-green-500 font-bold">● Ready</span>';
+                btn1.disabled = false;
+                btn2.disabled = false;
+            } else {
+                el.innerHTML = `<i data-lucide="loader-2" class="w-3 h-3 animate-spin"></i><span>${msg}</span>`;
+                el.className = "text-xs font-semibold text-orange-500 flex items-center justify-center space-x-2";
+                btn1.disabled = true;
+                btn2.disabled = true;
+            }
+            window.lucide.createIcons();
+        }
+
+        // Initialize
+        initAuth();
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                console.log("AirLink: Connected as", user.uid);
+                updateStatus(true, "Ready");
+            } else {
+                updateStatus(false, "Disconnected");
+            }
+        });
+
+        // --- GLOBAL VARIABLES ---
+        // We use a fixed Environment ID to keep paths consistent with system rules
+        const ENV_APP_ID = typeof __app_id !== 'undefined' ? __app_id : 'airlink-default';
+        
+        window.localConnection = null;
+        window.remoteConnection = null;
+        window.dataChannel = null;
+        window.transferId = null;
+        
+        // Sender State
+        let isDocReady = false;
+        let pendingCandidates = [];
+        
+        const rtcConfig = {
+            iceServers: [
+                { urls: ['stun:stun1.l.google.com:19302', 'stun:stun2.l.google.com:19302'] }
+            ]
+        };
+
+        // --- HELPERS ---
+        function getTransferDocRef(id) {
+            return doc(db, 'artifacts', ENV_APP_ID, 'public', 'data', 'transfers', id);
+        }
+
+        window.lucide.createIcons();
+
+        window.showScreen = (screenName) => {
+            ['home', 'send', 'receive'].forEach(s => {
+                document.getElementById(`screen-${s}`).classList.add('hidden-screen');
+            });
+            document.getElementById(`screen-${screenName}`).classList.remove('hidden-screen');
+        };
+
+        window.showToast = (msg) => {
+            const t = document.getElementById('toast');
+            t.innerText = msg;
+            t.classList.remove('opacity-0');
+            setTimeout(() => t.classList.add('opacity-0'), 3000);
+        };
+
+        window.resetApp = () => {
+            location.reload(); 
+        };
+
+        // --- SENDER LOGIC ---
+        
+        window.handleFileSelect = async (input) => {
+            if (!auth.currentUser) return; // Guard
+
+            const file = input.files[0];
+            if (!file) return;
+
+            if (file.size > 100 * 1024 * 1024) {
+                alert("File too large. Max 100MB.");
+                return;
+            }
+
+            // Reset
+            isDocReady = false;
+            pendingCandidates = [];
+
+            // Generate Code
+            window.transferId = Math.floor(100000 + Math.random() * 900000).toString();
+            
+            // UI
+            document.getElementById('send-step-1').classList.add('hidden');
+            document.getElementById('send-step-2').classList.remove('hidden');
+            document.getElementById('generated-code').innerText = window.transferId.slice(0,3) + ' ' + window.transferId.slice(3);
+
+            // WebRTC
+            window.localConnection = new RTCPeerConnection(rtcConfig);
+            
+            // Channel
+            window.dataChannel = window.localConnection.createDataChannel("fileTransfer");
+            window.dataChannel.onopen = () => {
+                document.getElementById('send-step-2').classList.add('hidden');
+                document.getElementById('send-step-3').classList.remove('hidden');
+                sendFile(file);
+            };
+
+            // ICE Handling (Queued)
+            window.localConnection.onicecandidate = (event) => {
+                if (event.candidate) {
+                    const c = JSON.parse(JSON.stringify(event.candidate));
+                    if (isDocReady) {
+                        const docRef = getTransferDocRef(window.transferId);
+                        updateDoc(docRef, { offerCandidates: arrayUnion(c) }).catch(console.error);
+                    } else {
+                        pendingCandidates.push(c);
+                    }
+                }
+            };
+
+            // Offer
+            const offer = await window.localConnection.createOffer();
+            await window.localConnection.setLocalDescription(offer);
+
+            // SetDoc (Create Room)
+            const docRef = getTransferDocRef(window.transferId);
+            try {
+                await setDoc(docRef, {
+                    offer: { type: offer.type, sdp: offer.sdp },
+                    fileName: file.name,
+                    fileSize: file.size,
+                    fileType: file.type,
+                    createdAt: new Date().toISOString()
+                });
+                
+                isDocReady = true;
+                
+                // Flush Queue
+                if (pendingCandidates.length > 0) {
+                    await updateDoc(docRef, {
+                        offerCandidates: arrayUnion(...pendingCandidates)
+                    });
+                    pendingCandidates = [];
+                }
+            } catch (err) {
+                console.error("SetDoc Error:", err);
+                window.showToast("Database Error: Check Permissions");
+            }
+
+            // Listen for Answer
+            onSnapshot(docRef, (snapshot) => {
+                const data = snapshot.data();
+                if (!data) return;
+
+                if (!window.localConnection.currentRemoteDescription && data.answer) {
+                    const answer = new RTCSessionDescription(data.answer);
+                    window.localConnection.setRemoteDescription(answer);
+                }
+
+                if (data.answerCandidates) {
+                    data.answerCandidates.forEach(candidate => {
+                        window.localConnection.addIceCandidate(new RTCIceCandidate(candidate));
+                    });
+                }
+            });
+        };
+
+        async function sendFile(file) {
+            const CHUNK_SIZE = 16 * 1024; 
+            const totalSize = file.size;
+            let offset = 0;
+            const fileReader = new FileReader();
+
+            fileReader.onload = (e) => {
+                window.dataChannel.send(e.target.result);
+                offset += e.target.result.byteLength;
+                
+                const percent = Math.round((offset / totalSize) * 100);
+                document.getElementById('send-bar').style.width = percent + '%';
+                document.getElementById('send-percent').innerText = percent + '%';
+
+                if (offset < totalSize) {
+                    readSlice(offset);
+                } else {
+                    document.getElementById('send-done-btn').classList.remove('hidden');
+                    window.showToast("File Sent Successfully!");
+                }
+            };
+
+            const readSlice = (o) => {
+                const slice = file.slice(offset, o + CHUNK_SIZE);
+                if (window.dataChannel.bufferedAmount > 16 * 1024 * 1024) { 
+                    setTimeout(() => readSlice(o), 100); 
+                } else {
+                    fileReader.readAsArrayBuffer(slice);
+                }
+            };
+            readSlice(0);
+        }
+
+        // --- RECEIVER LOGIC ---
+        window.startReceive = async () => {
+            if (!auth.currentUser) return; // Guard
+
+            const codeInput = document.getElementById('code-input').value.replace(/\s/g, '');
+            if (codeInput.length !== 6) {
+                window.showToast("Invalid Code");
+                return;
+            }
+            window.transferId = codeInput;
+
+            document.getElementById('receive-step-1').classList.add('hidden');
+            document.getElementById('receive-step-2').classList.remove('hidden');
+
+            window.remoteConnection = new RTCPeerConnection(rtcConfig);
+
+            window.remoteConnection.ondatachannel = (event) => {
+                window.dataChannel = event.channel;
+                setupReceiveChannel(window.dataChannel);
+            };
+
+            window.remoteConnection.onicecandidate = (event) => {
+                if (event.candidate) {
+                    const docRef = getTransferDocRef(window.transferId);
+                    updateDoc(docRef, {
+                        answerCandidates: arrayUnion(JSON.parse(JSON.stringify(event.candidate)))
+                    }).catch(e => console.log("Answer candidate ignored (doc might be closed)"));
+                }
+            };
+
+            const docRef = getTransferDocRef(window.transferId);
+            
+            onSnapshot(docRef, async (snapshot) => {
+                if (!snapshot.exists()) return;
+
+                const data = snapshot.data();
+                if (!data) return;
+
+                window.currentFileMeta = { name: data.fileName, size: data.fileSize, type: data.fileType };
+
+                if (!window.remoteConnection.currentRemoteDescription && data.offer) {
+                    await window.remoteConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
+                    
+                    const answer = await window.remoteConnection.createAnswer();
+                    await window.remoteConnection.setLocalDescription(answer);
+
+                    await updateDoc(docRef, {
+                        answer: { type: answer.type, sdp: answer.sdp }
+                    });
+                }
+
+                if (data.offerCandidates) {
+                    data.offerCandidates.forEach(candidate => {
+                        window.remoteConnection.addIceCandidate(new RTCIceCandidate(candidate));
+                    });
+                }
+            }, (error) => {
+                console.error("Snapshot Error:", error);
+                window.showToast("Code not found or expired.");
+            });
+        };
+
+        let receivedBuffers = [];
+        let receivedSize = 0;
+
+        function setupReceiveChannel(channel) {
+            channel.onopen = () => {
+                document.getElementById('receive-step-2').classList.add('hidden');
+                document.getElementById('receive-step-3').classList.remove('hidden');
+            };
+
+            channel.onmessage = (event) => {
+                const data = event.data;
+                receivedBuffers.push(data);
+                receivedSize += data.byteLength;
+            };
+        }
+        
+        window.currentFileMeta = null;
+
+        setInterval(() => {
+            if(window.dataChannel && window.currentFileMeta && receivedSize > 0) {
+                 const percent = Math.round((receivedSize / window.currentFileMeta.size) * 100);
+                 
+                 const bar = document.getElementById('receive-bar');
+                 if(bar) bar.style.width = percent + '%';
+                 
+                 const pText = document.getElementById('receive-percent');
+                 if(pText) pText.innerText = percent + '%';
+                 
+                 const info = document.getElementById('file-info');
+                 if(info) info.innerText = `${(receivedSize / (1024*1024)).toFixed(2)} MB / ${(window.currentFileMeta.size / (1024*1024)).toFixed(2)} MB`;
+
+                 if (receivedSize >= window.currentFileMeta.size) {
+                     const blob = new Blob(receivedBuffers, { type: window.currentFileMeta.type });
+                     const url = URL.createObjectURL(blob);
+                     const link = document.getElementById('download-link');
+                     link.href = url;
+                     link.download = window.currentFileMeta.name;
+                     link.classList.remove('hidden');
+                     link.innerText = `Download ${window.currentFileMeta.name}`;
+                     receivedSize = -1; 
+                 }
+            }
+        }, 200);
+
+    </script>
+</body>
+</html>
