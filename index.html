@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>AirLink - Cloud Sync</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Lucide Icons -->
@@ -13,6 +13,9 @@
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             background-color: #F2F2F7;
             -webkit-tap-highlight-color: transparent;
+            /* CRITICAL FIX: Use dynamic viewport height for mobile browsers */
+            height: 100dvh; 
+            width: 100vw;
         }
 
         /* Chat Bubbles */
@@ -46,12 +49,17 @@
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
         .hidden-screen { display: none !important; }
+
+        /* Safe Area for iPhone Home Bar */
+        .safe-pb {
+            padding-bottom: env(safe-area-inset-bottom, 20px);
+        }
     </style>
 </head>
-<body class="h-screen w-screen overflow-hidden flex flex-col relative">
+<body class="overflow-hidden flex flex-col relative">
 
     <!-- HEADER -->
-    <div class="h-16 bg-white/90 backdrop-blur-md border-b border-gray-200 flex items-center justify-between px-4 z-20 absolute top-0 w-full">
+    <div class="h-16 bg-white/90 backdrop-blur-md border-b border-gray-200 flex items-center justify-between px-4 z-20 shrink-0">
         <div class="flex items-center space-x-2">
             <div class="bg-blue-500 p-1.5 rounded-lg">
                 <i data-lucide="cloud-lightning" class="w-5 h-5 text-white"></i>
@@ -74,12 +82,10 @@
             </div>
             <h3 class="text-xl font-bold text-gray-900">Database Locked</h3>
             <p class="text-gray-600 text-sm leading-relaxed">
-                Your Firebase Security Rules are blocking access. 
-                <br><br>
-                Go to <strong>Firebase Console > Firestore > Rules</strong> and change <code class="bg-gray-100 px-1 rounded">allow read, write: if false;</code> to <code class="bg-green-100 px-1 rounded text-green-700">if true;</code> (Test Mode).
+                Go to <strong>Firebase Console > Firestore > Rules</strong> and set to <code class="bg-green-100 px-1 rounded text-green-700">allow read, write: if true;</code>
             </p>
             <button onclick="document.getElementById('error-modal').classList.add('hidden')" class="w-full bg-gray-900 text-white font-bold py-3 rounded-xl mt-4">
-                Okay, I'll fix it
+                Close
             </button>
         </div>
     </div>
@@ -108,18 +114,17 @@
     </div>
 
     <!-- SCREEN: CHAT / FEED -->
-    <div id="screen-chat" class="hidden-screen flex-1 flex flex-col bg-white h-full pt-16">
+    <div id="screen-chat" class="hidden-screen flex-1 flex flex-col bg-white h-full relative overflow-hidden">
         
-        <!-- MESSAGES AREA -->
+        <!-- MESSAGES AREA (Scrollable) -->
         <div id="messages-container" class="flex-1 overflow-y-auto p-4 space-y-4 bg-[#F2F2F7]">
-            <!-- Messages will be injected here -->
             <div class="text-center text-gray-400 text-xs py-8">
                 Start sending files (Max 5MB) or text...
             </div>
         </div>
 
-        <!-- INPUT AREA -->
-        <div class="bg-white/90 backdrop-blur border-t border-gray-200 p-4 safe-area-pb">
+        <!-- INPUT AREA (Fixed Bottom) -->
+        <div class="bg-white/90 backdrop-blur border-t border-gray-200 p-4 safe-pb shrink-0 z-30">
             <!-- File Upload Progress -->
             <div id="upload-progress" class="hidden mb-2">
                 <div class="w-full bg-gray-100 rounded-full h-1">
@@ -168,7 +173,6 @@
         const auth = getAuth(app);
         
         // --- CONSTANTS ---
-        // Using a hardcoded app ID for personal projects to avoid path issues
         const APP_ID = 'airlink_v1'; 
         let currentRoom = null;
         let unsubscribe = null;
@@ -220,7 +224,6 @@
         }
 
         function listenToRoom() {
-            // Using a specific path structure for compatibility
             const q = query(
                 collection(db, 'artifacts', APP_ID, 'public', 'data', 'airlink_messages'), 
                 where('room', '==', currentRoom)
@@ -235,7 +238,6 @@
                     return;
                 }
 
-                // In-memory sort to avoid index requirements
                 const messages = [];
                 snapshot.forEach(doc => {
                     messages.push({ id: doc.id, ...doc.data() });
@@ -286,13 +288,12 @@
             reader.readAsDataURL(file);
             reader.onload = async () => {
                 const base64Data = reader.result;
-                const chunks = chunkString(base64Data, 800000); // 800KB chunks
+                const chunks = chunkString(base64Data, 800000); 
                 const totalChunks = chunks.length;
 
                 progressText.innerText = `Uploading 1/${totalChunks}...`;
 
                 try {
-                    // 1. Create Message
                     const msgRef = await addDoc(collection(db, 'artifacts', APP_ID, 'public', 'data', 'airlink_messages'), {
                         room: currentRoom,
                         text: file.name,
@@ -305,7 +306,6 @@
                         createdAt: serverTimestamp()
                     });
 
-                    // 2. Upload Chunks
                     for (let i = 0; i < totalChunks; i++) {
                         progressBar.style.width = `${Math.round(((i + 1) / totalChunks) * 100)}%`;
                         progressText.innerText = `Uploading ${i + 1}/${totalChunks}...`;
@@ -317,9 +317,7 @@
                         });
                     }
 
-                    // 3. Complete
                     await setDoc(msgRef, { isLoading: false }, { merge: true });
-
                     progressContainer.classList.add('hidden');
                     input.value = "";
 
@@ -348,14 +346,12 @@
             window.lucide.createIcons();
 
             try {
-                // Query Chunks
                 const q = query(
                     collection(db, 'artifacts', APP_ID, 'public', 'data', 'airlink_chunks'),
                     where('messageId', '==', msgId)
                 );
                 
                 const snapshot = await getDocs(q);
-                
                 const sortedChunks = [];
                 snapshot.forEach(doc => {
                     sortedChunks.push(doc.data());
