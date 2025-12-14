@@ -167,14 +167,16 @@
         }
 
         .event-card.done {
-            opacity: 0.5; order: 100;
+            opacity: 0.6; order: 100;
             background: rgba(128,128,128,0.05); border-color: transparent;
         }
         .event-card.done .event-title { text-decoration: line-through; }
+        .event-card.done .type-indicator { background: var(--text-muted) !important; }
 
         .type-indicator {
             width: 3px; height: 24px; border-radius: 2px;
             margin-right: 12px; background: var(--primary); flex-shrink: 0;
+            transition: background 0.2s;
         }
 
         .time-box {
@@ -188,34 +190,39 @@
         .event-title { font-weight: 600; font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .event-desc { font-size: 0.75rem; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
 
-        /* --- FIXED RADIO BUTTON LOGIC --- */
+        /* --- NEW CHECKBOX STYLE (SQUIRCLE) --- */
         .check-wrapper {
             width: 48px; height: 48px;
             display: flex; align-items: center; justify-content: center;
-            margin-right: -12px; /* Pull right to edge */
+            margin-right: -12px;
             cursor: pointer;
-            z-index: 10; /* Ensure it sits above card content */
+            z-index: 10;
             -webkit-tap-highlight-color: transparent;
         }
         
-        .check-circle {
-            width: 22px; height: 22px;
-            border-radius: 50%;
+        .check-box {
+            width: 24px; height: 24px;
+            border-radius: 8px; /* Rounded Square */
             border: 2px solid var(--text-muted);
             background: transparent;
             display: flex; align-items: center; justify-content: center;
-            color: transparent;
-            transition: all 0.2s;
-            pointer-events: none; /* Let click pass to wrapper */
+            color: white;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); /* Bouncy transition */
+            pointer-events: none;
         }
         
-        /* Visual active state */
-        .check-wrapper:active .check-circle { transform: scale(0.9); background: rgba(0,0,0,0.05); }
+        /* Animation when pressing */
+        .check-wrapper:active .check-box { transform: scale(0.85); }
 
-        .event-card.done .check-circle {
-            background: var(--text-secondary); border-color: var(--text-secondary); color: white;
+        /* Checked State */
+        .event-card.done .check-box {
+            background: var(--text-secondary); /* Default, overridden by JS */
+            border-color: transparent;
+            transform: scale(1.1); /* Slight pop when checked */
         }
-        .check-circle i { font-size: 12px; }
+        
+        .check-box i { font-size: 14px; opacity: 0; transition: opacity 0.2s; }
+        .event-card.done .check-box i { opacity: 1; }
 
         /* --- NOTIFICATIONS --- */
         .toast {
@@ -299,22 +306,12 @@
         @media (prefers-color-scheme: dark) { .modal-sheet { background: #1c1c1e; } }
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
 
-        /* --- UNIFIED INPUT STYLING --- */
+        /* Unified Input Styling */
         .modal-input {
-            display: block;
-            width: 100%;
-            height: 52px; /* Explicit fixed height */
-            padding: 0 16px;
-            border-radius: 12px;
-            border: none;
-            background: rgba(120, 120, 128, 0.1);
-            font-size: 16px;
-            color: var(--text-main);
-            box-sizing: border-box; /* Ensures padding is inside width/height */
-            margin-bottom: 12px;
-            outline: none;
-            appearance: none;
-            -webkit-appearance: none;
+            display: block; width: 100%; height: 52px; padding: 0 16px;
+            border-radius: 12px; border: none; background: rgba(120, 120, 128, 0.1);
+            font-size: 16px; color: var(--text-main); box-sizing: border-box;
+            margin-bottom: 12px; outline: none; appearance: none; -webkit-appearance: none;
             font-family: inherit;
         }
 
@@ -327,13 +324,11 @@
 </head>
 <body>
 
-    <!-- Notification Toast -->
     <div id="toast" class="toast">
         <i class="ph-bold ph-check-circle" id="toast-icon"></i> 
         <span id="toast-msg">Notification</span>
     </div>
 
-    <!-- Confirmation Modal -->
     <div class="confirm-overlay" id="confirm-modal">
         <div class="confirm-box">
             <div style="font-weight:700; font-size:1.1rem; margin-bottom:8px;" id="confirm-title">Confirm</div>
@@ -352,7 +347,6 @@
         <button id="auth-btn" class="auth-btn">Sign In</button>
     </header>
 
-    <!-- Fixed Calendar Section -->
     <div class="calendar-section">
         <div class="calendar-card">
             <div class="calendar-header">
@@ -369,13 +363,11 @@
         </div>
     </div>
 
-    <!-- Scrollable List Section -->
     <div class="list-section">
         <div class="list-header" id="selected-date-label">Today</div>
         <div id="events-list"></div>
     </div>
 
-    <!-- FAB -->
     <div class="fab-container" id="fab-container">
         <button class="fab-main" id="fab-main"><i class="ph-bold ph-plus"></i></button>
         <button class="fab-option btn-payment" data-type="payment" data-label="Payment"><i class="ph-bold ph-currency-dollar"></i></button>
@@ -383,7 +375,6 @@
         <button class="fab-option btn-event" data-type="event" data-label="Event"><i class="ph-bold ph-calendar"></i></button>
     </div>
 
-    <!-- Editor Modal -->
     <div class="modal-overlay" id="modal">
         <div class="modal-sheet">
             <div style="display:flex; justify-content:space-between; margin-bottom:20px; align-items:center;">
@@ -394,7 +385,6 @@
                 <input type="hidden" id="inp-id">
                 <input type="hidden" id="inp-type">
                 
-                <!-- Unified Input Classes -->
                 <input type="text" id="inp-title" class="modal-input" placeholder="Title" required>
                 <input type="time" id="inp-time" class="modal-input" required>
                 <input type="text" id="inp-desc" class="modal-input" placeholder="Details (Optional)">
@@ -435,7 +425,6 @@
         let currentUser = null;
         let unsubscribe = null;
 
-        // --- NOTIFICATIONS ---
         function showToast(msg, icon="ph-check-circle") {
             const el = document.getElementById('toast');
             document.getElementById('toast-msg').textContent = msg;
@@ -459,7 +448,6 @@
             confirmModal.classList.add('active');
         }
 
-        // --- AUTH ---
         const authBtn = document.getElementById('auth-btn');
         authBtn.onclick = () => {
             if(!currentUser) signInWithPopup(auth, new GoogleAuthProvider());
@@ -487,7 +475,6 @@
             }
         });
 
-        // --- RENDER ---
         function render() {
             const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
             document.getElementById('month-display').textContent = `${months[viewDate.getMonth()]} ${viewDate.getFullYear()}`;
@@ -577,43 +564,42 @@
                         <div class="event-desc">${evt.desc||'No details'}</div>
                     </div>
                     <div class="check-wrapper" id="check-${evt.id}">
-                        <div class="check-circle">
+                        <div class="check-box">
                             ${isDone ? '<i class="ph-bold ph-check"></i>' : ''}
                         </div>
                     </div>
                 `;
                 list.appendChild(card);
+                
+                // Set initial color state
+                if(isDone) {
+                     card.querySelector('.check-box').style.background = barColor;
+                }
 
                 document.getElementById(`edit-${evt.id}`).onclick = () => openModal(evt.type, evt.title, evt);
                 
                 const checkBtn = document.getElementById(`check-${evt.id}`);
                 checkBtn.onclick = async (e) => {
                     e.stopPropagation();
-                    
                     const newStatus = isDone ? 'active' : 'done';
                     
-                    // --- OPTIMISTIC UI UPDATE ---
-                    // 1. Visually update immediately
+                    // Optimistic UI
+                    const checkBox = checkBtn.querySelector('.check-box');
                     if(newStatus === 'done') {
                         card.classList.add('done');
-                        checkBtn.querySelector('.check-circle').innerHTML = '<i class="ph-bold ph-check"></i>';
-                        checkBtn.querySelector('.check-circle').style.background = 'var(--text-secondary)';
-                        checkBtn.querySelector('.check-circle').style.borderColor = 'var(--text-secondary)';
-                        checkBtn.querySelector('.check-circle').style.color = 'white';
+                        checkBox.innerHTML = '<i class="ph-bold ph-check"></i>';
+                        checkBox.style.background = barColor; // Use Type Color
                     } else {
                         card.classList.remove('done');
-                        checkBtn.querySelector('.check-circle').innerHTML = '';
-                        checkBtn.querySelector('.check-circle').style.background = 'transparent';
-                        checkBtn.querySelector('.check-circle').style.borderColor = 'var(--text-muted)';
+                        checkBox.innerHTML = '';
+                        checkBox.style.background = 'transparent';
                     }
                     
-                    // 2. Commit to DB
                     await updateDoc(doc(db, `artifacts/${firebaseConfig.appId}/users/${currentUser.uid}/events`, evt.id), { status: newStatus });
                 };
             });
         }
 
-        // --- FAB & MODAL ---
         const modal = document.getElementById('modal');
         const fabContainer = document.getElementById('fab-container');
         document.getElementById('fab-main').onclick = (e) => { e.stopPropagation(); fabContainer.classList.toggle('open'); };
