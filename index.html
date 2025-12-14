@@ -157,17 +157,20 @@
             background: var(--glass-bg);
             backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
             border: 1px solid var(--glass-border);
-            padding: 8px 12px;
+            padding: 10px 14px; /* Clean padding without checkbox space */
             border-radius: 14px;
             margin-bottom: 8px;
             display: flex; align-items: center;
             transition: all 0.25s ease;
             min-height: 52px;
             position: relative;
+            cursor: pointer; /* Entire card is clickable */
         }
 
+        .event-card:active { transform: scale(0.98); background: rgba(255,255,255,0.5); }
+
         .event-card.done {
-            opacity: 0.6; order: 100;
+            opacity: 0.5; order: 100;
             background: rgba(128,128,128,0.05); border-color: transparent;
         }
         .event-card.done .event-title { text-decoration: line-through; }
@@ -176,7 +179,6 @@
         .type-indicator {
             width: 3px; height: 24px; border-radius: 2px;
             margin-right: 12px; background: var(--primary); flex-shrink: 0;
-            transition: background 0.2s;
         }
 
         .time-box {
@@ -186,43 +188,9 @@
         .time-text { font-weight: 600; font-size: 0.85rem; font-variant-numeric: tabular-nums; }
         .time-ampm { font-size: 0.6rem; color: var(--text-secondary); text-transform: uppercase; }
 
-        .event-info { flex: 1; cursor: pointer; min-width: 0; }
+        .event-info { flex: 1; min-width: 0; }
         .event-title { font-weight: 600; font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .event-desc { font-size: 0.75rem; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
-
-        /* --- NEW CHECKBOX STYLE (SQUIRCLE) --- */
-        .check-wrapper {
-            width: 48px; height: 48px;
-            display: flex; align-items: center; justify-content: center;
-            margin-right: -12px;
-            cursor: pointer;
-            z-index: 10;
-            -webkit-tap-highlight-color: transparent;
-        }
-        
-        .check-box {
-            width: 24px; height: 24px;
-            border-radius: 8px; /* Rounded Square */
-            border: 2px solid var(--text-muted);
-            background: transparent;
-            display: flex; align-items: center; justify-content: center;
-            color: white;
-            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); /* Bouncy transition */
-            pointer-events: none;
-        }
-        
-        /* Animation when pressing */
-        .check-wrapper:active .check-box { transform: scale(0.85); }
-
-        /* Checked State */
-        .event-card.done .check-box {
-            background: var(--text-secondary); /* Default, overridden by JS */
-            border-color: transparent;
-            transform: scale(1.1); /* Slight pop when checked */
-        }
-        
-        .check-box i { font-size: 14px; opacity: 0; transition: opacity 0.2s; }
-        .event-card.done .check-box i { opacity: 1; }
 
         /* --- NOTIFICATIONS --- */
         .toast {
@@ -315,10 +283,25 @@
             font-family: inherit;
         }
 
-        .modal-actions { display: flex; gap: 12px; margin-top: 10px; }
-        .btn-save { flex: 1; padding: 16px; background: var(--primary); color: white; border: none; border-radius: 14px; font-size: 1rem; font-weight: 600; cursor: pointer; }
+        .modal-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px; }
+        .btn-save { padding: 16px; background: var(--primary); color: white; border: none; border-radius: 14px; font-size: 1rem; font-weight: 600; cursor: pointer; grid-column: span 2; }
+        
+        /* Edit Mode Buttons */
+        .btn-toggle-status { padding: 16px; background: var(--success); color: white; border: none; border-radius: 14px; font-size: 1rem; font-weight: 600; cursor: pointer; display: none; }
         .btn-delete { padding: 16px; background: rgba(255, 59, 48, 0.1); color: var(--danger); border: none; border-radius: 14px; font-size: 1rem; font-weight: 600; display: none; cursor: pointer; }
-        .btn-delete.visible { display: block; }
+        
+        .is-edit .btn-save { grid-column: span 2; } /* Full width if new */
+        .is-edit .btn-save.hide { display: none; } /* Hide save if editing (optional, kept for clarity) */
+        
+        .is-edit .btn-toggle-status, .is-edit .btn-delete { display: block; }
+        .is-edit .btn-save { display: block; grid-column: span 2; margin-top: 0; }
+        
+        /* Three button layout for edit: Delete | Status | Save */
+        .modal-actions.edit-mode { grid-template-columns: 1fr 1fr; }
+        .modal-actions.edit-mode .btn-save { grid-column: span 2; order: 3; }
+        .modal-actions.edit-mode .btn-delete { order: 1; }
+        .modal-actions.edit-mode .btn-toggle-status { order: 2; }
+
 
     </style>
 </head>
@@ -389,8 +372,9 @@
                 <input type="time" id="inp-time" class="modal-input" required>
                 <input type="text" id="inp-desc" class="modal-input" placeholder="Details (Optional)">
                 
-                <div class="modal-actions">
+                <div class="modal-actions" id="modal-actions">
                     <button type="button" class="btn-delete" id="btn-delete-entry">Delete</button>
+                    <button type="button" class="btn-toggle-status" id="btn-toggle-status">Mark Done</button>
                     <button type="submit" class="btn-save" id="modal-submit-btn">Save</button>
                 </div>
             </form>
@@ -553,50 +537,21 @@
                 card.className = `event-card ${isDone ? 'done' : ''}`;
                 card.id = `card-${evt.id}`;
                 
+                // NO CHECKBOX HTML HERE - CLICK WHOLE CARD TO EDIT
                 card.innerHTML = `
                     <div class="type-indicator" style="background:${barColor}"></div>
                     <div class="time-box">
                         <span class="time-text">${hour12}:${m}</span>
                         <span class="time-ampm">${ampm}</span>
                     </div>
-                    <div class="event-info" id="edit-${evt.id}">
+                    <div class="event-info">
                         <div class="event-title">${evt.title}</div>
                         <div class="event-desc">${evt.desc||'No details'}</div>
                     </div>
-                    <div class="check-wrapper" id="check-${evt.id}">
-                        <div class="check-box">
-                            ${isDone ? '<i class="ph-bold ph-check"></i>' : ''}
-                        </div>
-                    </div>
                 `;
                 list.appendChild(card);
-                
-                // Set initial color state
-                if(isDone) {
-                     card.querySelector('.check-box').style.background = barColor;
-                }
 
-                document.getElementById(`edit-${evt.id}`).onclick = () => openModal(evt.type, evt.title, evt);
-                
-                const checkBtn = document.getElementById(`check-${evt.id}`);
-                checkBtn.onclick = async (e) => {
-                    e.stopPropagation();
-                    const newStatus = isDone ? 'active' : 'done';
-                    
-                    // Optimistic UI
-                    const checkBox = checkBtn.querySelector('.check-box');
-                    if(newStatus === 'done') {
-                        card.classList.add('done');
-                        checkBox.innerHTML = '<i class="ph-bold ph-check"></i>';
-                        checkBox.style.background = barColor; // Use Type Color
-                    } else {
-                        card.classList.remove('done');
-                        checkBox.innerHTML = '';
-                        checkBox.style.background = 'transparent';
-                    }
-                    
-                    await updateDoc(doc(db, `artifacts/${firebaseConfig.appId}/users/${currentUser.uid}/events`, evt.id), { status: newStatus });
-                };
+                card.onclick = () => openModal(evt.type, evt.title, evt);
             });
         }
 
@@ -624,9 +579,14 @@
             document.getElementById('inp-time').value = isEdit ? existingEvent.time : "";
             document.getElementById('inp-desc').value = isEdit ? existingEvent.desc : "";
             
+            const actionsDiv = document.getElementById('modal-actions');
             const delBtn = document.getElementById('btn-delete-entry');
+            const statusBtn = document.getElementById('btn-toggle-status');
+            
             if (isEdit) {
-                delBtn.classList.add('visible');
+                actionsDiv.classList.add('edit-mode');
+                
+                // Config Delete
                 delBtn.onclick = () => {
                     showConfirm("Delete Item", "This action cannot be undone.", async () => {
                         await deleteDoc(doc(db, `artifacts/${firebaseConfig.appId}/users/${currentUser.uid}/events`, existingEvent.id));
@@ -634,9 +594,23 @@
                         showToast("Item Deleted", "ph-trash");
                     });
                 };
+                
+                // Config Status Toggle
+                const isDone = existingEvent.status === 'done';
+                statusBtn.textContent = isDone ? "Mark Active" : "Mark Done";
+                statusBtn.style.background = isDone ? "var(--text-secondary)" : "var(--success)";
+                
+                statusBtn.onclick = async () => {
+                     const newStatus = isDone ? 'active' : 'done';
+                     await updateDoc(doc(db, `artifacts/${firebaseConfig.appId}/users/${currentUser.uid}/events`, existingEvent.id), { status: newStatus });
+                     closeModal();
+                     showToast(newStatus === 'done' ? "Marked Done" : "Marked Active");
+                };
+
             } else {
-                delBtn.classList.remove('visible');
+                actionsDiv.classList.remove('edit-mode');
             }
+            
             modal.classList.add('active');
         }
 
