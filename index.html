@@ -3,162 +3,405 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>AirLink - Cloud Sync</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>AirLink</title>
+    
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
     <style>
-        /* iOS Aesthetic */
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: #F2F2F7;
+        :root {
+            /* Theme Colors */
+            --primary: #007AFF;   /* Event (Blue) */
+            --success: #34C759;   /* To Do (Green) */
+            --danger: #FF3B30;    /* Payment (Red) */
+            
+            --glass-bg: rgba(255, 255, 255, 0.85);
+            --glass-border: rgba(255, 255, 255, 0.5);
+            --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
+            
+            --text-main: #1d1d1f;
+            --text-secondary: #86868b;
+            
+            --safe-top: env(safe-area-inset-top, 20px);
+            --safe-bottom: env(safe-area-inset-bottom, 20px);
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --glass-bg: rgba(30, 30, 30, 0.85);
+                --glass-border: rgba(255, 255, 255, 0.15);
+                --text-main: #f5f5f7;
+                --text-secondary: #a1a1a6;
+            }
+        }
+
+        * {
+            box-sizing: border-box;
             -webkit-tap-highlight-color: transparent;
-            /* CRITICAL FIX: Use dynamic viewport height for mobile browsers */
-            height: 100dvh; 
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            user-select: none;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #eef2f3 0%, #8e9eab 100%);
+            height: 100vh;
             width: 100vw;
+            overflow: hidden;
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
         }
 
-        /* Chat Bubbles */
-        .bubble-sent {
-            background-color: #007AFF;
-            color: white;
-            border-radius: 18px 18px 0 18px;
-            box-shadow: 0 2px 4px rgba(0,122,255,0.2);
-        }
-        .bubble-received {
-            background-color: #E5E5EA;
-            color: black;
-            border-radius: 18px 18px 18px 0;
+        @media (prefers-color-scheme: dark) {
+            body { background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%); }
         }
 
-        /* Smooth Inputs */
-        .ios-input {
-            background: #FFFFFF;
-            border: 1px solid #E5E5EA;
+        /* --- LAYOUT --- */
+        
+        /* Header */
+        header {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            height: calc(60px + var(--safe-top));
+            padding: var(--safe-top) 20px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+            /* No pointer-events: none here to ensure buttons work */
+        }
+
+        .brand {
+            font-size: 1.4rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--primary);
+            background: var(--glass-bg);
+            padding: 8px 16px;
             border-radius: 20px;
-            transition: all 0.2s;
-        }
-        .ios-input:focus {
-            border-color: #007AFF;
-            outline: none;
-            box-shadow: 0 0 0 3px rgba(0,122,255,0.1);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
         }
 
-        /* Animations */
-        .fade-in { animation: fadeIn 0.3s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-        .hidden-screen { display: none !important; }
-
-        /* Safe Area for iPhone Home Bar */
-        .safe-pb {
-            padding-bottom: env(safe-area-inset-bottom, 20px);
+        .auth-btn {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            padding: 10px 18px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--primary);
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            transition: transform 0.2s;
         }
+        .auth-btn:active { transform: scale(0.95); }
+
+        /* Main Content Wrapper */
+        .content-wrapper {
+            margin-top: calc(70px + var(--safe-top)); /* Clear header */
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+            z-index: 10;
+        }
+
+        /* Calendar */
+        .calendar-container {
+            margin: 0 20px 20px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 20px;
+            box-shadow: var(--glass-shadow);
+            flex-shrink: 0;
+        }
+
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .month-label { font-size: 1.1rem; font-weight: 700; }
+
+        .nav-btn {
+            background: rgba(128,128,128,0.1);
+            border: none;
+            border-radius: 50%;
+            width: 36px; height: 36px;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer;
+            color: var(--text-main);
+        }
+
+        .weekdays {
+            display: grid; grid-template-columns: repeat(7, 1fr);
+            text-align: center; font-size: 0.75rem; color: var(--text-secondary);
+            margin-bottom: 8px; font-weight: 600;
+        }
+
+        .days-grid {
+            display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px;
+        }
+
+        .day {
+            aspect-ratio: 1;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            border-radius: 50%;
+            font-size: 1rem;
+            position: relative;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .day.today { color: var(--primary); font-weight: 700; border: 1px solid var(--primary); }
+        .day.selected { background: var(--text-main); color: var(--glass-bg); }
+        .day.other-month { opacity: 0.3; }
+
+        .dots-container {
+            display: flex; gap: 2px; position: absolute; bottom: 5px;
+        }
+        .dot { width: 4px; height: 4px; border-radius: 50%; }
+
+        /* List */
+        .list-container {
+            flex: 1;
+            padding: 0 20px;
+            overflow-y: auto;
+            padding-bottom: 100px; /* Space for FAB */
+        }
+
+        .list-header {
+            font-size: 0.9rem; font-weight: 600; color: var(--text-secondary);
+            margin: 0 0 10px 5px; text-transform: uppercase;
+        }
+
+        .event-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            padding: 16px;
+            border-radius: 16px;
+            margin-bottom: 12px;
+            display: flex; align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .type-strip {
+            position: absolute; left: 0; top: 0; bottom: 0; width: 6px;
+        }
+
+        .time-box {
+            display: flex; flex-direction: column; align-items: center;
+            margin-right: 16px; min-width: 50px; padding-left: 8px;
+        }
+        .time-hour { font-weight: 600; font-size: 0.9rem; }
+
+        .event-info { flex: 1; }
+        .event-title { font-weight: 600; font-size: 1rem; }
+        .event-desc { font-size: 0.8rem; color: var(--text-secondary); }
+
+        .delete-btn {
+            background: transparent; border: none; color: var(--text-secondary);
+            padding: 10px; cursor: pointer;
+        }
+
+        /* --- SPEED DIAL FAB --- */
+        .fab-container {
+            position: fixed;
+            bottom: calc(var(--safe-bottom) + 20px);
+            right: 20px;
+            z-index: 200;
+            display: flex;
+            flex-direction: column-reverse; /* Items stack upwards */
+            align-items: center;
+            gap: 12px;
+        }
+
+        .fab-main {
+            width: 60px; height: 60px;
+            border-radius: 30px;
+            background: var(--text-main);
+            color: var(--glass-bg);
+            border: none;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+            font-size: 28px;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .fab-option {
+            width: 50px; height: 50px;
+            border-radius: 25px;
+            border: none;
+            color: white;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 20px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            opacity: 0;
+            transform: translateY(20px) scale(0.8);
+            pointer-events: none; /* Not clickable when hidden */
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+        }
+
+        /* Tooltips for FAB options */
+        .fab-option::after {
+            content: attr(data-label);
+            position: absolute;
+            right: 60px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 12px;
+            white-space: nowrap;
+            opacity: 0;
+            transition: opacity 0.2s;
+            pointer-events: none;
+        }
+
+        /* Open State */
+        .fab-container.open .fab-main {
+            transform: rotate(45deg);
+        }
+        
+        .fab-container.open .fab-option {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+            pointer-events: auto;
+        }
+        .fab-container.open .fab-option::after { opacity: 1; }
+
+        .btn-payment { background: var(--danger); transition-delay: 0.1s; }
+        .btn-todo { background: var(--success); transition-delay: 0.05s; }
+        .btn-event { background: var(--primary); transition-delay: 0s; }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.3);
+            backdrop-filter: blur(5px);
+            z-index: 300;
+            display: none; align-items: flex-end; justify-content: center;
+        }
+        .modal-overlay.active { display: flex; }
+
+        .modal-sheet {
+            width: 100%; max-width: 500px;
+            background: #fff;
+            border-top-left-radius: 24px; border-top-right-radius: 24px;
+            padding: 24px 24px calc(24px + var(--safe-bottom));
+            animation: slideUp 0.3s ease-out;
+        }
+        @media (prefers-color-scheme: dark) { .modal-sheet { background: #1c1c1e; } }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+        input, select {
+            width: 100%; padding: 16px;
+            background: rgba(120, 120, 128, 0.1);
+            border: none; border-radius: 12px;
+            font-size: 16px; margin-bottom: 12px;
+            color: var(--text-main); outline: none;
+        }
+
+        .btn-block {
+            width: 100%; padding: 16px;
+            color: white; border: none; border-radius: 14px;
+            font-size: 1rem; font-weight: 600; margin-top: 10px;
+        }
+
     </style>
 </head>
-<body class="overflow-hidden flex flex-col relative">
+<body>
 
-    <!-- HEADER -->
-    <div class="h-16 bg-white/90 backdrop-blur-md border-b border-gray-200 flex items-center justify-between px-4 z-20 shrink-0">
-        <div class="flex items-center space-x-2">
-            <div class="bg-blue-500 p-1.5 rounded-lg">
-                <i data-lucide="cloud-lightning" class="w-5 h-5 text-white"></i>
+    <header>
+        <div class="brand">
+            <i class="ph-fill ph-paper-plane-tilt"></i> AirLink
+        </div>
+        <button id="auth-btn" class="auth-btn">Sign In</button>
+    </header>
+
+    <div class="content-wrapper">
+        <div class="calendar-container">
+            <div class="calendar-header">
+                <div class="month-label" id="month-display">...</div>
+                <div style="display:flex; gap:8px;">
+                    <button class="nav-btn" id="prev-month"><i class="ph-bold ph-caret-left"></i></button>
+                    <button class="nav-btn" id="next-month"><i class="ph-bold ph-caret-right"></i></button>
+                </div>
             </div>
-            <h1 class="font-bold text-lg tracking-tight">AirLink</h1>
+            <div class="weekdays">
+                <div>Su</div><div>Mo</div><div>Tu</div><div>We</div><div>Th</div><div>Fr</div><div>Sa</div>
+            </div>
+            <div class="days-grid" id="days-grid"></div>
         </div>
-        <div id="room-badge" class="hidden bg-gray-100 px-3 py-1 rounded-full text-xs font-mono font-bold text-gray-500">
-            Room: <span id="current-room-id">...</span>
+
+        <div class="list-container">
+            <div class="list-header" id="selected-date-label">Today</div>
+            <div id="events-list"></div>
         </div>
-        <button onclick="logout()" class="text-blue-500 text-sm font-medium hover:opacity-70">
-            Exit
+    </div>
+
+    <!-- Speed Dial FAB -->
+    <div class="fab-container" id="fab-container">
+        <!-- Main Button -->
+        <button class="fab-main" id="fab-main">
+            <i class="ph-bold ph-plus"></i>
+        </button>
+        
+        <!-- Options (Reverse Order visually due to flex-direction column-reverse) -->
+        <button class="fab-option btn-payment" data-type="payment" data-label="Payment">
+            <i class="ph-bold ph-currency-dollar"></i>
+        </button>
+        <button class="fab-option btn-todo" data-type="todo" data-label="To Do">
+            <i class="ph-bold ph-check-square"></i>
+        </button>
+        <button class="fab-option btn-event" data-type="event" data-label="Event">
+            <i class="ph-bold ph-calendar"></i>
         </button>
     </div>
 
-    <!-- ERROR MODAL -->
-    <div id="error-modal" class="hidden absolute inset-0 z-50 bg-black/50 flex items-center justify-center p-6 backdrop-blur-sm fade-in">
-        <div class="bg-white rounded-3xl p-8 max-w-sm text-center shadow-2xl space-y-4">
-            <div class="bg-red-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-2">
-                <i data-lucide="lock" class="w-8 h-8 text-red-500"></i>
+    <!-- Universal Add Modal -->
+    <div class="modal-overlay" id="modal">
+        <div class="modal-sheet">
+            <div style="display:flex; justify-content:space-between; margin-bottom:20px;">
+                <span id="modal-title" style="font-weight:700; font-size:1.2rem;">New Item</span>
+                <i class="ph-bold ph-x" onclick="document.getElementById('modal').classList.remove('active')" style="font-size:24px; cursor:pointer;"></i>
             </div>
-            <h3 class="text-xl font-bold text-gray-900">Database Locked</h3>
-            <p class="text-gray-600 text-sm leading-relaxed">
-                Go to <strong>Firebase Console > Firestore > Rules</strong> and set to <code class="bg-green-100 px-1 rounded text-green-700">allow read, write: if true;</code>
-            </p>
-            <button onclick="document.getElementById('error-modal').classList.add('hidden')" class="w-full bg-gray-900 text-white font-bold py-3 rounded-xl mt-4">
-                Close
-            </button>
+            <form id="event-form">
+                <input type="hidden" id="inp-type">
+                <input type="text" id="inp-title" placeholder="Title" required>
+                <input type="time" id="inp-time" required>
+                <input type="text" id="inp-desc" placeholder="Details">
+                <button type="submit" class="btn-block" id="modal-submit-btn">Save</button>
+            </form>
         </div>
     </div>
 
-    <!-- SCREEN: JOIN ROOM -->
-    <div id="screen-join" class="flex-1 flex flex-col items-center justify-center p-6 z-10 bg-[#F2F2F7]">
-        <div class="bg-white p-8 rounded-3xl shadow-xl w-full max-w-sm text-center space-y-6 fade-in">
-            <div class="space-y-2">
-                <h2 class="text-2xl font-bold text-gray-900">Join a Space</h2>
-                <p class="text-gray-500 text-sm">Enter the same code on both devices</p>
-            </div>
-
-            <div class="space-y-4">
-                <input type="tel" id="room-input" maxlength="6" placeholder="e.g. 123456" 
-                    class="ios-input w-full text-center text-3xl font-mono font-bold py-4 tracking-widest text-gray-800 placeholder-gray-300">
-                
-                <button onclick="joinRoom()" id="join-btn" disabled class="w-full bg-blue-500 text-white font-bold py-4 rounded-xl shadow-lg shadow-blue-500/30 active:scale-95 transition-transform disabled:opacity-50 disabled:cursor-not-allowed">
-                    Start Sharing
-                </button>
-            </div>
-            
-            <div id="auth-status" class="text-xs text-orange-500 font-medium">
-                Connecting to cloud...
-            </div>
-        </div>
-    </div>
-
-    <!-- SCREEN: CHAT / FEED -->
-    <div id="screen-chat" class="hidden-screen flex-1 flex flex-col bg-white h-full relative overflow-hidden">
-        
-        <!-- MESSAGES AREA (Scrollable) -->
-        <div id="messages-container" class="flex-1 overflow-y-auto p-4 space-y-4 bg-[#F2F2F7]">
-            <div class="text-center text-gray-400 text-xs py-8">
-                Start sending files (Max 5MB) or text...
-            </div>
-        </div>
-
-        <!-- INPUT AREA (Fixed Bottom) -->
-        <div class="bg-white/90 backdrop-blur border-t border-gray-200 p-4 safe-pb shrink-0 z-30">
-            <!-- File Upload Progress -->
-            <div id="upload-progress" class="hidden mb-2">
-                <div class="w-full bg-gray-100 rounded-full h-1">
-                    <div id="progress-bar" class="bg-blue-500 h-1 rounded-full transition-all duration-200" style="width: 0%"></div>
-                </div>
-                <div id="progress-text" class="text-xs text-blue-500 mt-1 text-center font-medium">Processing...</div>
-            </div>
-
-            <div class="flex items-end space-x-2">
-                <!-- File Button -->
-                <input type="file" id="file-input" class="hidden" onchange="handleFileUpload(this)">
-                <button onclick="document.getElementById('file-input').click()" class="bg-gray-100 text-gray-500 p-3 rounded-full hover:bg-gray-200 transition-colors shrink-0">
-                    <i data-lucide="paperclip" class="w-6 h-6"></i>
-                </button>
-
-                <!-- Text Input -->
-                <textarea id="msg-input" rows="1" placeholder="Message..." 
-                    class="ios-input flex-1 p-3 max-h-32 resize-none text-base"></textarea>
-
-                <!-- Send Button -->
-                <button onclick="sendText()" class="bg-blue-500 text-white p-3 rounded-full hover:bg-blue-600 shadow-md shrink-0">
-                    <i data-lucide="send-horizontal" class="w-5 h-5 ml-0.5"></i>
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- FIREBASE MODULES -->
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
-        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, getDocs, doc, setDoc, where } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, query, where, onSnapshot, deleteDoc, doc, enableIndexedDbPersistence, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // --- CONFIG ---
         const firebaseConfig = {
             apiKey: "AIzaSyChp_DuOcvNw6k809mjwG-o1EqiBWo8x2A",
             authDomain: "airlink-754f2.firebaseapp.com",
@@ -168,311 +411,215 @@
             appId: "1:410579374648:web:1f153598f4ab66ab77cccd"
         };
 
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const auth = getAuth(app);
-        
-        // --- CONSTANTS ---
-        const APP_ID = 'airlink_v1'; 
-        let currentRoom = null;
-        let unsubscribe = null;
+        // --- APP INIT ---
+        let app, auth, db;
+        try {
+            app = initializeApp(firebaseConfig);
+            auth = getAuth(app);
+            db = getFirestore(app);
+            enableIndexedDbPersistence(db).catch(e => console.log("Persistence disabled"));
+        } catch(e) { console.error("Firebase init failed", e); }
+
+        let events = [];
+        let viewDate = new Date();
+        let selectedDate = new Date();
         let currentUser = null;
+        let unsubscribe = null;
 
         // --- AUTH ---
-        signInAnonymously(auth).catch((error) => {
-            console.error("Auth Error:", error);
-            document.getElementById('auth-status').innerText = "Connection Failed. Check Console.";
-        });
+        const authBtn = document.getElementById('auth-btn');
+        authBtn.onclick = () => {
+            if(!currentUser) {
+                const provider = new GoogleAuthProvider();
+                signInWithPopup(auth, provider).catch(e => alert("Login Error: " + e.message));
+            } else {
+                if(confirm("Sign out?")) signOut(auth);
+            }
+        };
 
         onAuthStateChanged(auth, (user) => {
-            if (user) {
-                currentUser = user;
-                document.getElementById('auth-status').innerText = "";
-                document.getElementById('auth-status').classList.add('hidden');
-                document.getElementById('join-btn').disabled = false;
-                document.getElementById('join-btn').innerText = "Join Room";
+            currentUser = user;
+            if(user) {
+                authBtn.textContent = "Sign Out";
+                authBtn.style.borderColor = "var(--danger)";
+                authBtn.style.color = "var(--danger)";
+                
+                const q = query(collection(db, `artifacts/${firebaseConfig.appId}/users/${user.uid}/events`), orderBy('dateKey'));
+                unsubscribe = onSnapshot(q, (snap) => {
+                    events = snap.docs.map(d => ({id:d.id, ...d.data()}));
+                    render();
+                });
+            } else {
+                authBtn.textContent = "Sign In";
+                authBtn.style.borderColor = "var(--glass-border)";
+                authBtn.style.color = "var(--primary)";
+                events = [];
+                if(unsubscribe) unsubscribe();
+                render();
             }
         });
 
-        // --- GLOBAL FUNCTIONS ---
-        
-        window.joinRoom = () => {
-            const code = document.getElementById('room-input').value.trim();
-            if (code.length < 3) {
-                alert("Please enter a valid room code (at least 3 digits)");
-                return;
+        // --- CALENDAR RENDER ---
+        function render() {
+            // Header
+            const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+            document.getElementById('month-display').textContent = `${months[viewDate.getMonth()]} ${viewDate.getFullYear()}`;
+
+            // Grid
+            const grid = document.getElementById('days-grid');
+            grid.innerHTML = "";
+            const firstDay = new Date(viewDate.getFullYear(), viewDate.getMonth(), 1).getDay();
+            const daysInMonth = new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 0).getDate();
+            const prevMonthLast = new Date(viewDate.getFullYear(), viewDate.getMonth(), 0).getDate();
+
+            for(let i=0; i<firstDay; i++) {
+                grid.innerHTML += `<div class="day other-month">${prevMonthLast - firstDay + 1 + i}</div>`;
             }
-            currentRoom = code;
-            document.getElementById('current-room-id').innerText = code;
-            document.getElementById('room-badge').classList.remove('hidden');
-            document.getElementById('screen-join').classList.add('hidden-screen');
-            document.getElementById('screen-chat').classList.remove('hidden-screen');
-            listenToRoom();
-        };
 
-        window.logout = () => {
-            if (unsubscribe) unsubscribe();
-            currentRoom = null;
-            document.getElementById('screen-chat').classList.add('hidden-screen');
-            document.getElementById('screen-join').classList.remove('hidden-screen');
-            document.getElementById('messages-container').innerHTML = '<div class="text-center text-gray-400 text-xs py-8">Joined new room...</div>';
-            document.getElementById('room-input').value = "";
-        };
+            for(let i=1; i<=daysInMonth; i++) {
+                const d = document.createElement('div');
+                d.className = 'day';
+                d.textContent = i;
+                
+                const thisDate = new Date(viewDate.getFullYear(), viewDate.getMonth(), i);
+                const key = formatDate(thisDate);
 
-        function showPermissionError() {
-            document.getElementById('error-modal').classList.remove('hidden');
+                if(thisDate.toDateString() === new Date().toDateString()) d.classList.add('today');
+                if(thisDate.toDateString() === selectedDate.toDateString()) d.classList.add('selected');
+
+                // Dots for events
+                const dayEvts = events.filter(e => e.dateKey === key);
+                if(dayEvts.length > 0) {
+                    const dots = document.createElement('div');
+                    dots.className = 'dots-container';
+                    // Limit to 3 dots
+                    dayEvts.slice(0,3).forEach(evt => {
+                        const dot = document.createElement('div');
+                        dot.className = 'dot';
+                        // Color based on type
+                        if(evt.type === 'payment') dot.style.background = 'var(--danger)';
+                        else if(evt.type === 'todo') dot.style.background = 'var(--success)';
+                        else dot.style.background = 'var(--primary)';
+                        dots.appendChild(dot);
+                    });
+                    d.appendChild(dots);
+                }
+
+                d.onclick = () => { selectedDate = thisDate; render(); };
+                grid.appendChild(d);
+            }
+            renderList();
         }
 
-        function listenToRoom() {
-            const q = query(
-                collection(db, 'artifacts', APP_ID, 'public', 'data', 'airlink_messages'), 
-                where('room', '==', currentRoom)
-            );
+        function renderList() {
+            const list = document.getElementById('events-list');
+            list.innerHTML = "";
+            document.getElementById('selected-date-label').textContent = selectedDate.toLocaleDateString('en-US', {weekday:'long', month:'long', day:'numeric'});
+            
+            const key = formatDate(selectedDate);
+            const dayEvents = events.filter(e => e.dateKey === key).sort((a,b) => a.time.localeCompare(b.time));
 
-            unsubscribe = onSnapshot(q, (snapshot) => {
-                const container = document.getElementById('messages-container');
-                container.innerHTML = "";
+            if(dayEvents.length === 0) {
+                list.innerHTML = `<div style="text-align:center; padding:30px; opacity:0.5;">No items</div>`;
+                return;
+            }
+
+            dayEvents.forEach(evt => {
+                let color = 'var(--primary)';
+                if(evt.type === 'payment') color = 'var(--danger)';
+                if(evt.type === 'todo') color = 'var(--success)';
+
+                const el = document.createElement('div');
+                el.className = 'event-card';
+                el.innerHTML = `
+                    <div class="type-strip" style="background:${color}"></div>
+                    <div class="time-box">
+                        <span class="time-hour">${evt.time}</span>
+                    </div>
+                    <div class="event-info">
+                        <div class="event-title">${evt.title}</div>
+                        <div class="event-desc">${evt.desc||''}</div>
+                    </div>
+                    <button class="delete-btn" id="del-${evt.id}"><i class="ph-bold ph-trash"></i></button>
+                `;
+                list.appendChild(el);
                 
-                if (snapshot.empty) {
-                    container.innerHTML = '<div class="text-center text-gray-400 text-xs py-12">No messages yet. Send a file!</div>';
-                    return;
-                }
-
-                const messages = [];
-                snapshot.forEach(doc => {
-                    messages.push({ id: doc.id, ...doc.data() });
-                });
-
-                messages.sort((a, b) => {
-                    const tA = a.createdAt ? a.createdAt.seconds : Date.now()/1000;
-                    const tB = b.createdAt ? b.createdAt.seconds : Date.now()/1000;
-                    return tA - tB;
-                });
-
-                messages.forEach((data) => {
-                    const isMine = data.senderId === currentUser.uid;
-                    const el = createMessageElement(data.id, data, isMine);
-                    container.appendChild(el);
-                });
-                
-                container.scrollTop = container.scrollHeight;
-
-            }, (error) => {
-                console.error("Listen Error:", error);
-                if (error.code === 'permission-denied') {
-                    showPermissionError();
-                }
+                document.getElementById(`del-${evt.id}`).onclick = (e) => {
+                    e.stopPropagation();
+                    if(confirm("Delete?")) deleteDoc(doc(db, `artifacts/${firebaseConfig.appId}/users/${currentUser.uid}/events`, evt.id));
+                };
             });
         }
 
-        // --- CHUNKED UPLOAD LOGIC ---
+        // --- FAB LOGIC ---
+        const fabContainer = document.getElementById('fab-container');
+        const fabMain = document.getElementById('fab-main');
         
-        window.handleFileUpload = async (input) => {
-            const file = input.files[0];
-            if (!file) return;
+        // Toggle Menu
+        fabMain.onclick = (e) => {
+            e.stopPropagation();
+            fabContainer.classList.toggle('open');
+        };
 
-            if (file.size > 5 * 1024 * 1024) {
-                alert("File too large. Max 5MB for database storage.");
-                input.value = "";
-                return;
-            }
+        // Close menu when clicking elsewhere
+        document.body.onclick = () => fabContainer.classList.remove('open');
 
-            const progressContainer = document.getElementById('upload-progress');
-            const progressBar = document.getElementById('progress-bar');
-            const progressText = document.getElementById('progress-text');
-            progressContainer.classList.remove('hidden');
-            progressBar.style.width = '10%';
-            progressText.innerText = "Encoding...";
-
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = async () => {
-                const base64Data = reader.result;
-                const chunks = chunkString(base64Data, 800000); 
-                const totalChunks = chunks.length;
-
-                progressText.innerText = `Uploading 1/${totalChunks}...`;
-
-                try {
-                    const msgRef = await addDoc(collection(db, 'artifacts', APP_ID, 'public', 'data', 'airlink_messages'), {
-                        room: currentRoom,
-                        text: file.name,
-                        type: 'file',
-                        fileType: file.type,
-                        fileSize: formatBytes(file.size),
-                        totalChunks: totalChunks,
-                        isLoading: true,
-                        senderId: currentUser.uid,
-                        createdAt: serverTimestamp()
-                    });
-
-                    for (let i = 0; i < totalChunks; i++) {
-                        progressBar.style.width = `${Math.round(((i + 1) / totalChunks) * 100)}%`;
-                        progressText.innerText = `Uploading ${i + 1}/${totalChunks}...`;
-                        
-                        await setDoc(doc(db, 'artifacts', APP_ID, 'public', 'data', 'airlink_chunks', `${msgRef.id}_${i}`), {
-                            messageId: msgRef.id,
-                            data: chunks[i],
-                            index: i
-                        });
-                    }
-
-                    await setDoc(msgRef, { isLoading: false }, { merge: true });
-                    progressContainer.classList.add('hidden');
-                    input.value = "";
-
-                } catch (e) {
-                    console.error("Upload error", e);
-                    progressContainer.classList.add('hidden');
-                    if (e.code === 'permission-denied') {
-                        showPermissionError();
-                    } else {
-                        alert("Upload failed: " + e.message);
-                    }
-                }
+        // Handle Options
+        document.querySelectorAll('.fab-option').forEach(btn => {
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                if(!currentUser) { alert("Please Sign In first"); return; }
+                
+                const type = btn.dataset.type;
+                const label = btn.dataset.label;
+                
+                openModal(type, label);
+                fabContainer.classList.remove('open');
             };
-        };
+        });
 
-        function chunkString(str, length) {
-            return str.match(new RegExp('.{1,' + length + '}', 'g'));
+        // --- MODAL ---
+        const modal = document.getElementById('modal');
+        function openModal(type, title) {
+            document.getElementById('modal-title').textContent = "New " + title;
+            document.getElementById('inp-type').value = type;
+            
+            // Set Color of Button based on type
+            const btn = document.getElementById('modal-submit-btn');
+            if(type === 'payment') btn.style.background = 'var(--danger)';
+            else if(type === 'todo') btn.style.background = 'var(--success)';
+            else btn.style.background = 'var(--primary)';
+
+            modal.classList.add('active');
+            document.getElementById('inp-title').focus();
         }
 
-        // --- CHUNKED DOWNLOAD LOGIC ---
+        document.getElementById('event-form').onsubmit = async (e) => {
+            e.preventDefault();
+            const type = document.getElementById('inp-type').value;
+            const title = document.getElementById('inp-title').value;
+            const time = document.getElementById('inp-time').value;
+            const desc = document.getElementById('inp-desc').value;
+
+            try {
+                await addDoc(collection(db, `artifacts/${firebaseConfig.appId}/users/${currentUser.uid}/events`), {
+                    type, title, time, desc,
+                    dateKey: formatDate(selectedDate),
+                    createdAt: new Date().toISOString()
+                });
+                e.target.reset();
+                modal.classList.remove('active');
+            } catch(err) { alert(err.message); }
+        };
+
+        const formatDate = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
         
-        window.downloadFile = async (msgId, fileName, fileType) => {
-            const btn = document.getElementById(`btn-${msgId}`);
-            const originalText = btn.innerHTML;
-            btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i>`;
-            window.lucide.createIcons();
+        document.getElementById('prev-month').onclick = () => { viewDate.setMonth(viewDate.getMonth()-1); render(); };
+        document.getElementById('next-month').onclick = () => { viewDate.setMonth(viewDate.getMonth()+1); render(); };
 
-            try {
-                const q = query(
-                    collection(db, 'artifacts', APP_ID, 'public', 'data', 'airlink_chunks'),
-                    where('messageId', '==', msgId)
-                );
-                
-                const snapshot = await getDocs(q);
-                const sortedChunks = [];
-                snapshot.forEach(doc => {
-                    sortedChunks.push(doc.data());
-                });
-                sortedChunks.sort((a, b) => a.index - b.index);
-                
-                let fullBase64 = "";
-                sortedChunks.forEach(chunk => {
-                    fullBase64 += chunk.data;
-                });
-
-                if (fullBase64.length === 0) throw new Error("No data found");
-
-                const res = await fetch(fullBase64);
-                const blob = await res.blob();
-                const url = URL.createObjectURL(blob);
-                
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = fileName;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-
-                btn.innerHTML = `<i data-lucide="check" class="w-4 h-4"></i>`;
-                setTimeout(() => {
-                   btn.innerHTML = originalText;
-                   window.lucide.createIcons();
-                }, 2000);
-
-            } catch (e) {
-                console.error("Download Error", e);
-                if (e.code === 'permission-denied') {
-                    showPermissionError();
-                } else {
-                    alert("Download failed.");
-                }
-                btn.innerHTML = originalText;
-            }
-        };
-
-        window.sendText = async () => {
-            const input = document.getElementById('msg-input');
-            const text = input.value.trim();
-            if (!text) return;
-            input.value = ""; 
-
-            try {
-                await addDoc(collection(db, 'artifacts', APP_ID, 'public', 'data', 'airlink_messages'), {
-                    room: currentRoom,
-                    text: text,
-                    type: 'text',
-                    senderId: currentUser.uid,
-                    createdAt: serverTimestamp()
-                });
-            } catch (e) { 
-                console.error(e);
-                if (e.code === 'permission-denied') {
-                    showPermissionError();
-                }
-            }
-        };
-
-        // --- UI HELPERS ---
-
-        function createMessageElement(id, data, isMine) {
-            const div = document.createElement('div');
-            div.className = `flex w-full mb-4 ${isMine ? 'justify-end' : 'justify-start'} fade-in`;
-
-            let contentHtml = '';
-
-            if (data.type === 'file') {
-                const isReady = !data.isLoading;
-                
-                contentHtml = `
-                    <div class="p-3 max-w-[85%] ${isMine ? 'bubble-sent' : 'bubble-received'}">
-                        <div class="flex items-center space-x-3 mb-2 bg-black/5 p-2 rounded-lg">
-                             <div class="bg-white p-2 rounded shadow-sm">
-                                <i data-lucide="${data.fileType.includes('image') ? 'image' : 'file'}" class="w-5 h-5 text-gray-500"></i>
-                             </div>
-                             <div class="overflow-hidden">
-                                <div class="text-xs truncate font-bold opacity-90">${data.text}</div>
-                                <div class="text-xs font-mono opacity-70">${data.fileSize}</div>
-                             </div>
-                        </div>
-                        <div class="flex items-center justify-between mt-2">
-                             <span class="text-[10px] opacity-60 uppercase tracking-wider font-bold">
-                                ${isReady ? 'Available' : 'Uploading...'}
-                             </span>
-                             ${isReady ? `
-                                <button id="btn-${id}" onclick="downloadFile('${id}', '${data.text}', '${data.fileType}')" class="bg-white/20 hover:bg-white/30 p-2 rounded-full transition-colors">
-                                    <i data-lucide="download" class="w-4 h-4"></i>
-                                </button>
-                             ` : `<i data-lucide="loader-2" class="w-4 h-4 animate-spin opacity-50"></i>`}
-                        </div>
-                    </div>
-                `;
-            } else {
-                contentHtml = `
-                    <div class="px-4 py-2.5 max-w-[80%] break-words text-sm ${isMine ? 'bubble-sent' : 'bubble-received'}">
-                        ${data.text}
-                    </div>
-                `;
-            }
-
-            div.innerHTML = contentHtml;
-            setTimeout(() => window.lucide.createIcons(), 0);
-            return div;
-        }
-
-        function formatBytes(bytes, decimals = 1) {
-            if (!+bytes) return '0 Bytes';
-            const k = 1024;
-            const dm = decimals < 0 ? 0 : decimals;
-            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-            const i = Math.floor(Math.log(bytes) / Math.log(k));
-            return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
-        }
-
-        window.lucide.createIcons();
+        render(); // Init
     </script>
 </body>
 </html>
+
+
