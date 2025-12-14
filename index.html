@@ -12,17 +12,19 @@
 
     <style>
         :root {
-            /* Theme Colors */
-            --primary: #007AFF;   /* Event (Blue) */
+            /* Palette */
+            --primary: #007AFF;   /* Brand Blue */
             --success: #34C759;   /* To Do (Green) */
             --danger: #FF3B30;    /* Payment (Red) */
+            --warning: #F5A623;   /* Event (Medium Dark Yellow) */
             
-            --glass-bg: rgba(255, 255, 255, 0.85);
-            --glass-border: rgba(255, 255, 255, 0.5);
-            --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
+            --glass-bg: rgba(255, 255, 255, 0.92);
+            --glass-border: rgba(255, 255, 255, 0.6);
+            --glass-shadow: 0 4px 20px rgba(0,0,0,0.05);
             
             --text-main: #1d1d1f;
             --text-secondary: #86868b;
+            --text-muted: #c7c7cc;
             
             --safe-top: env(safe-area-inset-top, 20px);
             --safe-bottom: env(safe-area-inset-bottom, 20px);
@@ -30,10 +32,11 @@
 
         @media (prefers-color-scheme: dark) {
             :root {
-                --glass-bg: rgba(30, 30, 30, 0.85);
-                --glass-border: rgba(255, 255, 255, 0.15);
+                --glass-bg: rgba(28, 28, 30, 0.92);
+                --glass-border: rgba(255, 255, 255, 0.1);
                 --text-main: #f5f5f7;
-                --text-secondary: #a1a1a6;
+                --text-secondary: #98989d;
+                --text-muted: #48484a;
             }
         }
 
@@ -50,257 +53,245 @@
             background: linear-gradient(135deg, #eef2f3 0%, #8e9eab 100%);
             height: 100vh;
             width: 100vw;
-            overflow: hidden;
+            overflow: hidden; /* Prevent body scroll */
             color: var(--text-main);
             display: flex;
             flex-direction: column;
+            overscroll-behavior: none;
         }
 
         @media (prefers-color-scheme: dark) {
             body { background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%); }
         }
 
-        /* --- LAYOUT --- */
-        
-        /* Header */
+        /* --- HEADER --- */
         header {
-            position: fixed;
+            position: absolute; /* Absolute within the flex container logic */
             top: 0; left: 0; right: 0;
-            height: calc(60px + var(--safe-top));
+            height: calc(50px + var(--safe-top));
             padding: var(--safe-top) 20px 0;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            z-index: 100;
-            /* No pointer-events: none here to ensure buttons work */
+            z-index: 50;
+            /* Glass header to cover scrolling content nicely */
+            background: rgba(255,255,255,0.0); 
         }
 
         .brand {
-            font-size: 1.4rem;
+            font-size: 1.3rem;
             font-weight: 700;
             display: flex;
             align-items: center;
-            gap: 8px;
-            color: var(--primary);
-            background: var(--glass-bg);
-            padding: 8px 16px;
-            border-radius: 20px;
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            gap: 6px;
+            color: var(--text-main);
+            /* Add subtle backing for readability */
+            text-shadow: 0 2px 10px rgba(255,255,255,0.5);
         }
+        @media (prefers-color-scheme: dark) { .brand { text-shadow: none; } }
 
         .auth-btn {
-            background: var(--glass-bg);
-            border: 1px solid var(--glass-border);
-            padding: 10px 18px;
-            border-radius: 20px;
+            background: transparent;
+            border: none;
             font-size: 0.9rem;
-            font-weight: 600;
-            color: var(--primary);
+            font-weight: 500;
+            color: var(--text-secondary);
             cursor: pointer;
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-            transition: transform 0.2s;
+            padding: 8px;
+            transition: color 0.2s;
         }
-        .auth-btn:active { transform: scale(0.95); }
+        .auth-btn:active { opacity: 0.6; }
 
-        /* Main Content Wrapper */
+        /* --- CONTENT AREA --- */
         .content-wrapper {
-            margin-top: calc(70px + var(--safe-top)); /* Clear header */
+            margin-top: calc(50px + var(--safe-top)); /* Push down below header */
             flex: 1;
             display: flex;
             flex-direction: column;
-            overflow: hidden;
+            height: calc(100vh - 50px - var(--safe-top));
             position: relative;
-            z-index: 10;
         }
 
-        /* Calendar */
+        /* Calendar (Fixed at top of content) */
         .calendar-container {
-            margin: 0 20px 20px;
+            margin: 0 20px 10px;
             background: var(--glass-bg);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
             border: 1px solid var(--glass-border);
             border-radius: 24px;
             padding: 20px;
             box-shadow: var(--glass-shadow);
-            flex-shrink: 0;
+            flex-shrink: 0; /* Never shrink */
+            z-index: 20;
         }
 
         .calendar-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            display: flex; justify-content: space-between; align-items: center;
             margin-bottom: 15px;
         }
-
         .month-label { font-size: 1.1rem; font-weight: 700; }
-
+        
         .nav-btn {
-            background: rgba(128,128,128,0.1);
-            border: none;
-            border-radius: 50%;
-            width: 36px; height: 36px;
+            background: rgba(128,128,128,0.1); border: none;
+            border-radius: 50%; width: 32px; height: 32px;
             display: flex; align-items: center; justify-content: center;
-            cursor: pointer;
-            color: var(--text-main);
+            color: var(--text-main); cursor: pointer;
         }
 
         .weekdays {
             display: grid; grid-template-columns: repeat(7, 1fr);
-            text-align: center; font-size: 0.75rem; color: var(--text-secondary);
-            margin-bottom: 8px; font-weight: 600;
+            text-align: center; font-size: 0.7rem; color: var(--text-secondary);
+            margin-bottom: 8px; font-weight: 600; text-transform: uppercase;
         }
 
-        .days-grid {
-            display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px;
-        }
+        .days-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
 
         .day {
             aspect-ratio: 1;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            border-radius: 50%;
-            font-size: 1rem;
-            position: relative;
-            cursor: pointer;
-            transition: 0.2s;
+            border-radius: 50%; font-size: 1rem; position: relative;
+            cursor: pointer; transition: 0.2s;
         }
-        .day.today { color: var(--primary); font-weight: 700; border: 1px solid var(--primary); }
-        .day.selected { background: var(--text-main); color: var(--glass-bg); }
+        /* Selected State: Brand Blue */
+        .day.selected { background: var(--primary); color: white; box-shadow: 0 4px 12px rgba(0,122,255,0.3); }
+        .day.today:not(.selected) { color: var(--primary); font-weight: 700; }
         .day.other-month { opacity: 0.3; }
 
-        .dots-container {
-            display: flex; gap: 2px; position: absolute; bottom: 5px;
-        }
+        .dots-container { display: flex; gap: 2px; position: absolute; bottom: 5px; }
         .dot { width: 4px; height: 4px; border-radius: 50%; }
 
-        /* List */
+        /* List (Scrollable) */
         .list-container {
             flex: 1;
-            padding: 0 20px;
-            overflow-y: auto;
-            padding-bottom: 100px; /* Space for FAB */
+            overflow-y: auto; /* Independent scroll */
+            padding: 0 20px 120px 20px; /* Bottom padding for FAB */
+            overscroll-behavior-y: contain; /* Stop bounce affecting body */
+            -webkit-overflow-scrolling: touch;
         }
 
         .list-header {
-            font-size: 0.9rem; font-weight: 600; color: var(--text-secondary);
-            margin: 0 0 10px 5px; text-transform: uppercase;
+            font-size: 0.85rem; font-weight: 600; color: var(--text-secondary);
+            margin: 10px 0 10px 5px; text-transform: uppercase; letter-spacing: 0.5px;
         }
 
+        /* --- EVENT CARD --- */
         .event-card {
             background: var(--glass-bg);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
             border: 1px solid var(--glass-border);
             padding: 16px;
-            border-radius: 16px;
-            margin-bottom: 12px;
+            border-radius: 18px;
+            margin-bottom: 10px;
             display: flex; align-items: center;
             position: relative;
-            overflow: hidden;
+            transition: all 0.3s ease;
         }
-        
-        .type-strip {
-            position: absolute; left: 0; top: 0; bottom: 0; width: 6px;
+
+        /* Completed State */
+        .event-card.done {
+            opacity: 0.5;
+            order: 999; /* Move to bottom via flexbox order */
+            background: rgba(128,128,128,0.05);
+            border-color: transparent;
+        }
+        .event-card.done .event-title { text-decoration: line-through; }
+
+        .type-indicator {
+            width: 4px; height: 30px; border-radius: 2px;
+            margin-right: 12px; background: var(--primary);
         }
 
         .time-box {
-            display: flex; flex-direction: column; align-items: center;
-            margin-right: 16px; min-width: 50px; padding-left: 8px;
+            display: flex; flex-direction: column;
+            margin-right: 14px; min-width: 45px;
         }
-        .time-hour { font-weight: 600; font-size: 0.9rem; }
+        .time-text { font-weight: 600; font-size: 0.9rem; font-variant-numeric: tabular-nums; }
+        .time-ampm { font-size: 0.7rem; color: var(--text-secondary); text-transform: uppercase; }
 
-        .event-info { flex: 1; }
-        .event-title { font-weight: 600; font-size: 1rem; }
+        .event-info { flex: 1; cursor: pointer; } /* Text is clickable to edit */
+        .event-title { font-weight: 600; font-size: 1rem; margin-bottom: 2px; }
         .event-desc { font-size: 0.8rem; color: var(--text-secondary); }
 
-        .delete-btn {
-            background: transparent; border: none; color: var(--text-secondary);
-            padding: 10px; cursor: pointer;
+        /* Radio / Check Button */
+        .check-btn {
+            width: 28px; height: 28px;
+            border-radius: 50%;
+            border: 2px solid var(--text-muted);
+            background: transparent;
+            margin-left: 10px;
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            color: transparent;
+            transition: all 0.2s;
         }
+        
+        /* Checkbox state logic */
+        .event-card.done .check-btn {
+            background: var(--text-secondary);
+            border-color: var(--text-secondary);
+            color: white;
+        }
+        
+        .check-btn i { font-size: 16px; }
 
-        /* --- SPEED DIAL FAB --- */
+        /* --- FAB & SPEED DIAL --- */
         .fab-container {
             position: fixed;
             bottom: calc(var(--safe-bottom) + 20px);
             right: 20px;
-            z-index: 200;
-            display: flex;
-            flex-direction: column-reverse; /* Items stack upwards */
-            align-items: center;
-            gap: 12px;
+            z-index: 100;
+            display: flex; flex-direction: column-reverse;
+            align-items: center; gap: 12px;
         }
 
         .fab-main {
-            width: 60px; height: 60px;
-            border-radius: 30px;
+            width: 56px; height: 56px;
+            border-radius: 28px;
             background: var(--text-main);
             color: var(--glass-bg);
             border: none;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.3);
-            font-size: 28px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+            font-size: 24px;
             display: flex; align-items: center; justify-content: center;
-            cursor: pointer;
             transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            cursor: pointer;
         }
 
         .fab-option {
-            width: 50px; height: 50px;
-            border-radius: 25px;
-            border: none;
-            color: white;
+            width: 44px; height: 44px;
+            border-radius: 22px; border: none; color: white;
             display: flex; align-items: center; justify-content: center;
             font-size: 20px;
-            cursor: pointer;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-            opacity: 0;
-            transform: translateY(20px) scale(0.8);
-            pointer-events: none; /* Not clickable when hidden */
-            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            opacity: 0; transform: translateY(20px) scale(0.5);
+            pointer-events: none;
+            transition: all 0.2s;
             position: relative;
         }
-
-        /* Tooltips for FAB options */
         .fab-option::after {
             content: attr(data-label);
-            position: absolute;
-            right: 60px;
-            background: rgba(0,0,0,0.7);
-            color: white;
-            padding: 4px 8px;
-            border-radius: 6px;
-            font-size: 12px;
-            white-space: nowrap;
-            opacity: 0;
-            transition: opacity 0.2s;
-            pointer-events: none;
+            position: absolute; right: 55px;
+            background: rgba(0,0,0,0.7); color: white;
+            padding: 4px 8px; border-radius: 6px; font-size: 12px;
+            opacity: 0; white-space: nowrap; pointer-events: none;
         }
 
-        /* Open State */
-        .fab-container.open .fab-main {
-            transform: rotate(45deg);
-        }
-        
-        .fab-container.open .fab-option {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-            pointer-events: auto;
-        }
+        .fab-container.open .fab-main { transform: rotate(45deg); }
+        .fab-container.open .fab-option { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
         .fab-container.open .fab-option::after { opacity: 1; }
 
+        /* Colors for FAB */
         .btn-payment { background: var(--danger); transition-delay: 0.1s; }
         .btn-todo { background: var(--success); transition-delay: 0.05s; }
-        .btn-event { background: var(--primary); transition-delay: 0s; }
+        .btn-event { background: var(--warning); transition-delay: 0s; }
 
-        /* Modal */
+        /* --- MODAL --- */
         .modal-overlay {
             position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.3);
-            backdrop-filter: blur(5px);
-            z-index: 300;
+            background: rgba(0,0,0,0.4);
+            backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+            z-index: 200;
             display: none; align-items: flex-end; justify-content: center;
         }
         .modal-overlay.active { display: flex; }
@@ -311,6 +302,7 @@
             border-top-left-radius: 24px; border-top-right-radius: 24px;
             padding: 24px 24px calc(24px + var(--safe-bottom));
             animation: slideUp 0.3s ease-out;
+            display: flex; flex-direction: column;
         }
         @media (prefers-color-scheme: dark) { .modal-sheet { background: #1c1c1e; } }
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
@@ -323,11 +315,22 @@
             color: var(--text-main); outline: none;
         }
 
-        .btn-block {
-            width: 100%; padding: 16px;
-            color: white; border: none; border-radius: 14px;
-            font-size: 1rem; font-weight: 600; margin-top: 10px;
+        .modal-actions {
+            display: flex; gap: 12px; margin-top: 10px;
         }
+
+        .btn-save {
+            flex: 1; padding: 16px; background: var(--primary);
+            color: white; border: none; border-radius: 14px;
+            font-size: 1rem; font-weight: 600; cursor: pointer;
+        }
+        .btn-delete {
+            padding: 16px; background: rgba(255, 59, 48, 0.1);
+            color: var(--danger); border: none; border-radius: 14px;
+            font-size: 1rem; font-weight: 600; cursor: pointer;
+            display: none; /* Hidden by default */
+        }
+        .btn-delete.visible { display: block; }
 
     </style>
 </head>
@@ -335,7 +338,7 @@
 
     <header>
         <div class="brand">
-            <i class="ph-fill ph-paper-plane-tilt"></i> AirLink
+            <i class="ph-fill ph-paper-plane-tilt" style="color: var(--primary)"></i> AirLink
         </div>
         <button id="auth-btn" class="auth-btn">Sign In</button>
     </header>
@@ -361,38 +364,33 @@
         </div>
     </div>
 
-    <!-- Speed Dial FAB -->
+    <!-- Speed Dial -->
     <div class="fab-container" id="fab-container">
-        <!-- Main Button -->
-        <button class="fab-main" id="fab-main">
-            <i class="ph-bold ph-plus"></i>
-        </button>
-        
-        <!-- Options (Reverse Order visually due to flex-direction column-reverse) -->
-        <button class="fab-option btn-payment" data-type="payment" data-label="Payment">
-            <i class="ph-bold ph-currency-dollar"></i>
-        </button>
-        <button class="fab-option btn-todo" data-type="todo" data-label="To Do">
-            <i class="ph-bold ph-check-square"></i>
-        </button>
-        <button class="fab-option btn-event" data-type="event" data-label="Event">
-            <i class="ph-bold ph-calendar"></i>
-        </button>
+        <button class="fab-main" id="fab-main"><i class="ph-bold ph-plus"></i></button>
+        <button class="fab-option btn-payment" data-type="payment" data-label="Payment"><i class="ph-bold ph-currency-dollar"></i></button>
+        <button class="fab-option btn-todo" data-type="todo" data-label="To Do"><i class="ph-bold ph-check-square"></i></button>
+        <button class="fab-option btn-event" data-type="event" data-label="Event"><i class="ph-bold ph-calendar"></i></button>
     </div>
 
-    <!-- Universal Add Modal -->
+    <!-- Edit/Add Modal -->
     <div class="modal-overlay" id="modal">
         <div class="modal-sheet">
-            <div style="display:flex; justify-content:space-between; margin-bottom:20px;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:20px; align-items:center;">
                 <span id="modal-title" style="font-weight:700; font-size:1.2rem;">New Item</span>
-                <i class="ph-bold ph-x" onclick="document.getElementById('modal').classList.remove('active')" style="font-size:24px; cursor:pointer;"></i>
+                <i class="ph-bold ph-x" onclick="closeModal()" style="font-size:24px; cursor:pointer; opacity:0.5;"></i>
             </div>
             <form id="event-form">
+                <input type="hidden" id="inp-id"> <!-- Hidden ID for Editing -->
                 <input type="hidden" id="inp-type">
+                
                 <input type="text" id="inp-title" placeholder="Title" required>
                 <input type="time" id="inp-time" required>
-                <input type="text" id="inp-desc" placeholder="Details">
-                <button type="submit" class="btn-block" id="modal-submit-btn">Save</button>
+                <input type="text" id="inp-desc" placeholder="Details (Optional)">
+                
+                <div class="modal-actions">
+                    <button type="button" class="btn-delete" id="btn-delete-entry">Delete</button>
+                    <button type="submit" class="btn-save" id="modal-submit-btn">Save</button>
+                </div>
             </form>
         </div>
     </div>
@@ -400,8 +398,9 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, query, where, onSnapshot, deleteDoc, doc, enableIndexedDbPersistence, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, query, onSnapshot, enableIndexedDbPersistence, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
+        // CONFIG
         const firebaseConfig = {
             apiKey: "AIzaSyChp_DuOcvNw6k809mjwG-o1EqiBWo8x2A",
             authDomain: "airlink-754f2.firebaseapp.com",
@@ -411,14 +410,13 @@
             appId: "1:410579374648:web:1f153598f4ab66ab77cccd"
         };
 
-        // --- APP INIT ---
         let app, auth, db;
         try {
             app = initializeApp(firebaseConfig);
             auth = getAuth(app);
             db = getFirestore(app);
-            enableIndexedDbPersistence(db).catch(e => console.log("Persistence disabled"));
-        } catch(e) { console.error("Firebase init failed", e); }
+            enableIndexedDbPersistence(db).catch(e=>console.log("Persistence n/a"));
+        } catch(e) { console.error(e); }
 
         let events = [];
         let viewDate = new Date();
@@ -429,21 +427,15 @@
         // --- AUTH ---
         const authBtn = document.getElementById('auth-btn');
         authBtn.onclick = () => {
-            if(!currentUser) {
-                const provider = new GoogleAuthProvider();
-                signInWithPopup(auth, provider).catch(e => alert("Login Error: " + e.message));
-            } else {
-                if(confirm("Sign out?")) signOut(auth);
-            }
+            if(!currentUser) signInWithPopup(auth, new GoogleAuthProvider());
+            else if(confirm("Sign Out?")) signOut(auth);
         };
 
         onAuthStateChanged(auth, (user) => {
             currentUser = user;
             if(user) {
                 authBtn.textContent = "Sign Out";
-                authBtn.style.borderColor = "var(--danger)";
-                authBtn.style.color = "var(--danger)";
-                
+                // Only load if logged in
                 const q = query(collection(db, `artifacts/${firebaseConfig.appId}/users/${user.uid}/events`), orderBy('dateKey'));
                 unsubscribe = onSnapshot(q, (snap) => {
                     events = snap.docs.map(d => ({id:d.id, ...d.data()}));
@@ -451,21 +443,19 @@
                 });
             } else {
                 authBtn.textContent = "Sign In";
-                authBtn.style.borderColor = "var(--glass-border)";
-                authBtn.style.color = "var(--primary)";
                 events = [];
                 if(unsubscribe) unsubscribe();
                 render();
             }
         });
 
-        // --- CALENDAR RENDER ---
+        // --- RENDER ---
         function render() {
-            // Header
+            // Calendar Header
             const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
             document.getElementById('month-display').textContent = `${months[viewDate.getMonth()]} ${viewDate.getFullYear()}`;
 
-            // Grid
+            // Calendar Grid
             const grid = document.getElementById('days-grid');
             grid.innerHTML = "";
             const firstDay = new Date(viewDate.getFullYear(), viewDate.getMonth(), 1).getDay();
@@ -487,19 +477,17 @@
                 if(thisDate.toDateString() === new Date().toDateString()) d.classList.add('today');
                 if(thisDate.toDateString() === selectedDate.toDateString()) d.classList.add('selected');
 
-                // Dots for events
-                const dayEvts = events.filter(e => e.dateKey === key);
+                // Dots
+                const dayEvts = events.filter(e => e.dateKey === key && e.status !== 'done');
                 if(dayEvts.length > 0) {
                     const dots = document.createElement('div');
                     dots.className = 'dots-container';
-                    // Limit to 3 dots
                     dayEvts.slice(0,3).forEach(evt => {
                         const dot = document.createElement('div');
                         dot.className = 'dot';
-                        // Color based on type
-                        if(evt.type === 'payment') dot.style.background = 'var(--danger)';
-                        else if(evt.type === 'todo') dot.style.background = 'var(--success)';
-                        else dot.style.background = 'var(--primary)';
+                        if(evt.type==='payment') dot.style.background='var(--danger)';
+                        else if(evt.type==='todo') dot.style.background='var(--success)';
+                        else dot.style.background='var(--warning)';
                         dots.appendChild(dot);
                     });
                     d.appendChild(dots);
@@ -517,109 +505,138 @@
             document.getElementById('selected-date-label').textContent = selectedDate.toLocaleDateString('en-US', {weekday:'long', month:'long', day:'numeric'});
             
             const key = formatDate(selectedDate);
-            const dayEvents = events.filter(e => e.dateKey === key).sort((a,b) => a.time.localeCompare(b.time));
+            // Sort: Time first, but if done, push to bottom
+            const dayEvents = events.filter(e => e.dateKey === key).sort((a,b) => {
+                if (a.status === 'done' && b.status !== 'done') return 1;
+                if (a.status !== 'done' && b.status === 'done') return -1;
+                return a.time.localeCompare(b.time);
+            });
 
             if(dayEvents.length === 0) {
-                list.innerHTML = `<div style="text-align:center; padding:30px; opacity:0.5;">No items</div>`;
+                list.innerHTML = `<div style="text-align:center; padding:40px; opacity:0.4;">No items</div>`;
                 return;
             }
 
             dayEvents.forEach(evt => {
-                let color = 'var(--primary)';
-                if(evt.type === 'payment') color = 'var(--danger)';
-                if(evt.type === 'todo') color = 'var(--success)';
+                // Determine colors
+                let barColor = 'var(--warning)'; // Default Event
+                if(evt.type === 'payment') barColor = 'var(--danger)';
+                if(evt.type === 'todo') barColor = 'var(--success)';
 
-                const el = document.createElement('div');
-                el.className = 'event-card';
-                el.innerHTML = `
-                    <div class="type-strip" style="background:${color}"></div>
+                const isDone = evt.status === 'done';
+                const [h, m] = evt.time.split(':');
+                const hour = parseInt(h);
+                const ampm = hour >= 12 ? 'PM' : 'AM';
+                const hour12 = hour % 12 || 12;
+
+                const card = document.createElement('div');
+                card.className = `event-card ${isDone ? 'done' : ''}`;
+                card.innerHTML = `
+                    <div class="type-indicator" style="background:${barColor}"></div>
                     <div class="time-box">
-                        <span class="time-hour">${evt.time}</span>
+                        <span class="time-text">${hour12}:${m}</span>
+                        <span class="time-ampm">${ampm}</span>
                     </div>
-                    <div class="event-info">
+                    <div class="event-info" id="edit-${evt.id}">
                         <div class="event-title">${evt.title}</div>
                         <div class="event-desc">${evt.desc||''}</div>
                     </div>
-                    <button class="delete-btn" id="del-${evt.id}"><i class="ph-bold ph-trash"></i></button>
+                    <button class="check-btn" id="check-${evt.id}">
+                        ${isDone ? '<i class="ph-bold ph-check"></i>' : ''}
+                    </button>
                 `;
-                list.appendChild(el);
                 
-                document.getElementById(`del-${evt.id}`).onclick = (e) => {
+                list.appendChild(card);
+
+                // Edit Click
+                document.getElementById(`edit-${evt.id}`).onclick = () => {
+                    openModal(evt.type, evt.title, evt);
+                };
+
+                // Check/Radio Click
+                document.getElementById(`check-${evt.id}`).onclick = async (e) => {
                     e.stopPropagation();
-                    if(confirm("Delete?")) deleteDoc(doc(db, `artifacts/${firebaseConfig.appId}/users/${currentUser.uid}/events`, evt.id));
+                    const newStatus = isDone ? 'active' : 'done';
+                    await updateDoc(doc(db, `artifacts/${firebaseConfig.appId}/users/${currentUser.uid}/events`, evt.id), { status: newStatus });
                 };
             });
         }
 
-        // --- FAB LOGIC ---
+        // --- MODAL & FAB ---
+        const modal = document.getElementById('modal');
         const fabContainer = document.getElementById('fab-container');
-        const fabMain = document.getElementById('fab-main');
         
-        // Toggle Menu
-        fabMain.onclick = (e) => {
-            e.stopPropagation();
-            fabContainer.classList.toggle('open');
-        };
-
-        // Close menu when clicking elsewhere
+        document.getElementById('fab-main').onclick = (e) => { e.stopPropagation(); fabContainer.classList.toggle('open'); };
         document.body.onclick = () => fabContainer.classList.remove('open');
+        window.closeModal = () => modal.classList.remove('active');
 
-        // Handle Options
         document.querySelectorAll('.fab-option').forEach(btn => {
             btn.onclick = (e) => {
                 e.stopPropagation();
                 if(!currentUser) { alert("Please Sign In first"); return; }
-                
-                const type = btn.dataset.type;
-                const label = btn.dataset.label;
-                
-                openModal(type, label);
+                openModal(btn.dataset.type, btn.dataset.label, null);
                 fabContainer.classList.remove('open');
             };
         });
 
-        // --- MODAL ---
-        const modal = document.getElementById('modal');
-        function openModal(type, title) {
-            document.getElementById('modal-title').textContent = "New " + title;
-            document.getElementById('inp-type').value = type;
+        function openModal(type, typeLabel, existingEvent) {
+            const isEdit = !!existingEvent;
             
-            // Set Color of Button based on type
-            const btn = document.getElementById('modal-submit-btn');
-            if(type === 'payment') btn.style.background = 'var(--danger)';
-            else if(type === 'todo') btn.style.background = 'var(--success)';
-            else btn.style.background = 'var(--primary)';
+            document.getElementById('modal-title').textContent = isEdit ? "Edit Item" : "New " + typeLabel;
+            document.getElementById('inp-id').value = isEdit ? existingEvent.id : "";
+            document.getElementById('inp-type').value = isEdit ? existingEvent.type : type;
+            document.getElementById('inp-title').value = isEdit ? existingEvent.title : "";
+            document.getElementById('inp-time').value = isEdit ? existingEvent.time : "";
+            document.getElementById('inp-desc').value = isEdit ? existingEvent.desc : "";
+            
+            // Show/Hide Delete Button
+            const delBtn = document.getElementById('btn-delete-entry');
+            if (isEdit) {
+                delBtn.classList.add('visible');
+                delBtn.onclick = async () => {
+                    if(confirm("Delete this item permanently?")) {
+                        await deleteDoc(doc(db, `artifacts/${firebaseConfig.appId}/users/${currentUser.uid}/events`, existingEvent.id));
+                        closeModal();
+                    }
+                };
+            } else {
+                delBtn.classList.remove('visible');
+            }
 
             modal.classList.add('active');
-            document.getElementById('inp-title').focus();
         }
 
         document.getElementById('event-form').onsubmit = async (e) => {
             e.preventDefault();
-            const type = document.getElementById('inp-type').value;
-            const title = document.getElementById('inp-title').value;
-            const time = document.getElementById('inp-time').value;
-            const desc = document.getElementById('inp-desc').value;
+            const id = document.getElementById('inp-id').value;
+            const data = {
+                type: document.getElementById('inp-type').value,
+                title: document.getElementById('inp-title').value,
+                time: document.getElementById('inp-time').value,
+                desc: document.getElementById('inp-desc').value,
+                dateKey: formatDate(selectedDate)
+            };
 
             try {
-                await addDoc(collection(db, `artifacts/${firebaseConfig.appId}/users/${currentUser.uid}/events`), {
-                    type, title, time, desc,
-                    dateKey: formatDate(selectedDate),
-                    createdAt: new Date().toISOString()
-                });
+                if (id) {
+                    // Update
+                    await updateDoc(doc(db, `artifacts/${firebaseConfig.appId}/users/${currentUser.uid}/events`, id), data);
+                } else {
+                    // Create
+                    data.status = 'active';
+                    data.createdAt = new Date().toISOString();
+                    await addDoc(collection(db, `artifacts/${firebaseConfig.appId}/users/${currentUser.uid}/events`), data);
+                }
                 e.target.reset();
-                modal.classList.remove('active');
-            } catch(err) { alert(err.message); }
+                closeModal();
+            } catch(err) { console.error(err); alert(err.message); }
         };
 
         const formatDate = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-        
         document.getElementById('prev-month').onclick = () => { viewDate.setMonth(viewDate.getMonth()-1); render(); };
         document.getElementById('next-month').onclick = () => { viewDate.setMonth(viewDate.getMonth()+1); render(); };
 
-        render(); // Init
+        render();
     </script>
 </body>
 </html>
-
-
