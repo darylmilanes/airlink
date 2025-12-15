@@ -47,6 +47,7 @@
             font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             user-select: none;
             touch-action: manipulation;
+            -webkit-font-smoothing: antialiased; /* Crisper text on iOS */
         }
 
         body {
@@ -89,35 +90,28 @@
             cursor: pointer; padding: 10px;
         }
 
-        /* --- APP CONTENT CONTAINER --- */
+        /* --- APP CONTENT & LAYOUT --- */
         #app-content {
             flex: 1;
             display: flex;
-            flex-direction: column; /* Default Portrait: Column */
+            flex-direction: column; /* Default: Portrait */
             overflow: hidden;
             position: relative;
         }
 
-        /* --- LANDSCAPE MODE LOGIC --- */
+        /* Landscape Mode (Split View) */
         @media (orientation: landscape) {
             #app-content {
-                flex-direction: row; /* Switch to Row */
+                flex-direction: row;
                 padding: 0 20px;
             }
-            
             .calendar-section {
-                width: 45%; /* Left side width */
-                max-width: 400px;
-                height: 100%;
+                width: 45%; max-width: 400px; height: 100%;
                 padding-right: 20px !important;
-                display: flex;
-                flex-direction: column;
-                justify-content: flex-start;
+                display: flex; flex-direction: column; justify-content: flex-start;
             }
-
             .list-section {
-                flex: 1;
-                height: 100%;
+                flex: 1; height: 100%;
                 border-left: 1px solid rgba(128,128,128,0.1);
                 padding-left: 20px !important;
             }
@@ -318,6 +312,26 @@
             font-family: inherit;
         }
 
+        /* Time Input Centering & Uniformity */
+        input[type="time"].modal-input {
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 52px; /* Matches height for vertical alignment */
+        }
+        /* Remove default time icon on webkit if preferred, or keep standard */
+        input[type="time"]::-webkit-calendar-picker-indicator {
+            background: transparent;
+            color: var(--text-secondary);
+            cursor: pointer;
+            height: 100%; width: 100%;
+            position: absolute; left: 0; top: 0; opacity: 0; /* Make invisible but clickable */
+        }
+        /* Relative positioning for the input wrapper effect */
+        .time-input-wrapper { position: relative; width: 100%; }
+
+
         .hidden-field { display: none; }
 
         .modal-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px; }
@@ -327,17 +341,11 @@
         .btn-toggle-status { padding: 16px; background: var(--success); color: white; border: none; border-radius: 14px; font-size: 1rem; font-weight: 600; cursor: pointer; display: none; }
         .btn-delete { padding: 16px; background: rgba(255, 59, 48, 0.1); color: var(--danger); border: none; border-radius: 14px; font-size: 1rem; font-weight: 600; display: none; cursor: pointer; }
         
-        .is-edit .btn-save { grid-column: span 2; } /* Full width if new */
-        .is-edit .btn-save.hide { display: none; } /* Hide save if editing (optional, kept for clarity) */
-        
-        .is-edit .btn-toggle-status, .is-edit .btn-delete { display: block; }
-        .is-edit .btn-save { display: block; grid-column: span 2; margin-top: 0; }
-        
-        /* Three button layout for edit: Delete | Status | Save */
+        /* Edit Mode Layout */
         .modal-actions.edit-mode { grid-template-columns: 1fr 1fr; }
         .modal-actions.edit-mode .btn-save { grid-column: span 2; order: 3; }
-        .modal-actions.edit-mode .btn-delete { order: 1; }
-        .modal-actions.edit-mode .btn-toggle-status { order: 2; }
+        .modal-actions.edit-mode .btn-delete { display: block; order: 1; }
+        .modal-actions.edit-mode .btn-toggle-status { display: block; order: 2; }
 
 
     </style>
@@ -401,14 +409,17 @@
         <div class="modal-sheet">
             <div style="display:flex; justify-content:space-between; margin-bottom:20px; align-items:center;">
                 <span id="modal-title" style="font-weight:700; font-size:1.1rem;">New Item</span>
-                <i class="ph-bold ph-x" onclick="closeModal()" style="font-size:24px; cursor:pointer; opacity:0.5;"></i>
+                <i class="ph-bold ph-x" onclick="attemptCloseModal()" style="font-size:24px; cursor:pointer; opacity:0.5;"></i>
             </div>
             <form id="event-form">
                 <input type="hidden" id="inp-id">
                 <input type="hidden" id="inp-type">
                 
                 <input type="text" id="inp-title" class="modal-input" placeholder="Title" required>
-                <input type="time" id="inp-time" class="modal-input" required>
+                
+                <div class="time-input-wrapper">
+                    <input type="time" id="inp-time" class="modal-input" required>
+                </div>
                 
                 <!-- Recurring Field (Only for Payments) -->
                 <div id="div-recurring" class="hidden-field">
@@ -587,7 +598,6 @@
                 card.className = `event-card ${isDone ? 'done' : ''}`;
                 card.id = `card-${evt.id}`;
                 
-                // Recurrence Badge
                 let recurrenceBadge = '';
                 if(evt.recurrence && evt.recurrence !== 'none') {
                     recurrenceBadge = `<span class="recurrence-badge">• ${evt.recurrence}</span>`;
@@ -615,6 +625,20 @@
         document.getElementById('fab-main').onclick = (e) => { e.stopPropagation(); fabContainer.classList.toggle('open'); };
         document.body.onclick = () => fabContainer.classList.remove('open');
         window.closeModal = () => modal.classList.remove('active');
+
+        // Added Attempt Close Logic
+        window.attemptCloseModal = () => {
+            const id = document.getElementById('inp-id').value;
+            const title = document.getElementById('inp-title').value;
+            // If adding new item (no ID) AND title has text
+            if(!id && title.trim().length > 0) {
+                showConfirm("Discard Entry?", "Changes will be lost.", () => {
+                    closeModal();
+                });
+            } else {
+                closeModal();
+            }
+        };
 
         document.querySelectorAll('.fab-option').forEach(btn => {
             btn.onclick = (e) => {
