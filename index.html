@@ -89,6 +89,40 @@
             cursor: pointer; padding: 10px;
         }
 
+        /* --- APP CONTENT CONTAINER --- */
+        #app-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column; /* Default Portrait: Column */
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* --- LANDSCAPE MODE LOGIC --- */
+        @media (orientation: landscape) {
+            #app-content {
+                flex-direction: row; /* Switch to Row */
+                padding: 0 20px;
+            }
+            
+            .calendar-section {
+                width: 45%; /* Left side width */
+                max-width: 400px;
+                height: 100%;
+                padding-right: 20px !important;
+                display: flex;
+                flex-direction: column;
+                justify-content: flex-start;
+            }
+
+            .list-section {
+                flex: 1;
+                height: 100%;
+                border-left: 1px solid rgba(128,128,128,0.1);
+                padding-left: 20px !important;
+            }
+        }
+
         /* --- CALENDAR --- */
         .calendar-section {
             flex: 0 0 auto;
@@ -157,14 +191,14 @@
             background: var(--glass-bg);
             backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
             border: 1px solid var(--glass-border);
-            padding: 10px 14px; /* Clean padding without checkbox space */
+            padding: 10px 14px;
             border-radius: 14px;
             margin-bottom: 8px;
             display: flex; align-items: center;
             transition: all 0.25s ease;
             min-height: 52px;
             position: relative;
-            cursor: pointer; /* Entire card is clickable */
+            cursor: pointer;
         }
 
         .event-card:active { transform: scale(0.98); background: rgba(255,255,255,0.5); }
@@ -191,6 +225,7 @@
         .event-info { flex: 1; min-width: 0; }
         .event-title { font-weight: 600; font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .event-desc { font-size: 0.75rem; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
+        .recurrence-badge { display: inline-block; background: rgba(0,0,0,0.05); padding: 1px 4px; border-radius: 4px; margin-left: 4px; font-size: 0.7rem; color: var(--text-main); }
 
         /* --- NOTIFICATIONS --- */
         .toast {
@@ -283,6 +318,8 @@
             font-family: inherit;
         }
 
+        .hidden-field { display: none; }
+
         .modal-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px; }
         .btn-save { padding: 16px; background: var(--primary); color: white; border: none; border-radius: 14px; font-size: 1rem; font-weight: 600; cursor: pointer; grid-column: span 2; }
         
@@ -330,25 +367,27 @@
         <button id="auth-btn" class="auth-btn">Sign In</button>
     </header>
 
-    <div class="calendar-section">
-        <div class="calendar-card">
-            <div class="calendar-header">
-                <div class="month-label" id="month-display">...</div>
-                <div style="display:flex; gap:8px;">
-                    <button class="nav-btn" id="prev-month"><i class="ph-bold ph-caret-left"></i></button>
-                    <button class="nav-btn" id="next-month"><i class="ph-bold ph-caret-right"></i></button>
+    <div id="app-content">
+        <div class="calendar-section">
+            <div class="calendar-card">
+                <div class="calendar-header">
+                    <div class="month-label" id="month-display">...</div>
+                    <div style="display:flex; gap:8px;">
+                        <button class="nav-btn" id="prev-month"><i class="ph-bold ph-caret-left"></i></button>
+                        <button class="nav-btn" id="next-month"><i class="ph-bold ph-caret-right"></i></button>
+                    </div>
                 </div>
+                <div class="weekdays">
+                    <div>Su</div><div>Mo</div><div>Tu</div><div>We</div><div>Th</div><div>Fr</div><div>Sa</div>
+                </div>
+                <div class="days-grid" id="days-grid"></div>
             </div>
-            <div class="weekdays">
-                <div>Su</div><div>Mo</div><div>Tu</div><div>We</div><div>Th</div><div>Fr</div><div>Sa</div>
-            </div>
-            <div class="days-grid" id="days-grid"></div>
         </div>
-    </div>
 
-    <div class="list-section">
-        <div class="list-header" id="selected-date-label">Today</div>
-        <div id="events-list"></div>
+        <div class="list-section">
+            <div class="list-header" id="selected-date-label">Today</div>
+            <div id="events-list"></div>
+        </div>
     </div>
 
     <div class="fab-container" id="fab-container">
@@ -370,6 +409,17 @@
                 
                 <input type="text" id="inp-title" class="modal-input" placeholder="Title" required>
                 <input type="time" id="inp-time" class="modal-input" required>
+                
+                <!-- Recurring Field (Only for Payments) -->
+                <div id="div-recurring" class="hidden-field">
+                    <select id="inp-recurring" class="modal-input">
+                        <option value="none">One-time Payment</option>
+                        <option value="Weekly">Weekly</option>
+                        <option value="Monthly">Monthly</option>
+                        <option value="Yearly">Yearly</option>
+                    </select>
+                </div>
+
                 <input type="text" id="inp-desc" class="modal-input" placeholder="Details (Optional)">
                 
                 <div class="modal-actions" id="modal-actions">
@@ -537,7 +587,12 @@
                 card.className = `event-card ${isDone ? 'done' : ''}`;
                 card.id = `card-${evt.id}`;
                 
-                // NO CHECKBOX HTML HERE - CLICK WHOLE CARD TO EDIT
+                // Recurrence Badge
+                let recurrenceBadge = '';
+                if(evt.recurrence && evt.recurrence !== 'none') {
+                    recurrenceBadge = `<span class="recurrence-badge">• ${evt.recurrence}</span>`;
+                }
+
                 card.innerHTML = `
                     <div class="type-indicator" style="background:${barColor}"></div>
                     <div class="time-box">
@@ -546,7 +601,7 @@
                     </div>
                     <div class="event-info">
                         <div class="event-title">${evt.title}</div>
-                        <div class="event-desc">${evt.desc||'No details'}</div>
+                        <div class="event-desc">${evt.desc||'No details'} ${recurrenceBadge}</div>
                     </div>
                 `;
                 list.appendChild(card);
@@ -579,6 +634,18 @@
             document.getElementById('inp-time').value = isEdit ? existingEvent.time : "";
             document.getElementById('inp-desc').value = isEdit ? existingEvent.desc : "";
             
+            // Recurrence Field Logic
+            const recurDiv = document.getElementById('div-recurring');
+            const recurInp = document.getElementById('inp-recurring');
+            
+            if (type === 'payment' || (isEdit && existingEvent.type === 'payment')) {
+                recurDiv.style.display = 'block';
+                recurInp.value = isEdit && existingEvent.recurrence ? existingEvent.recurrence : 'none';
+            } else {
+                recurDiv.style.display = 'none';
+                recurInp.value = 'none';
+            }
+
             const actionsDiv = document.getElementById('modal-actions');
             const delBtn = document.getElementById('btn-delete-entry');
             const statusBtn = document.getElementById('btn-toggle-status');
@@ -622,6 +689,7 @@
                 title: document.getElementById('inp-title').value,
                 time: document.getElementById('inp-time').value,
                 desc: document.getElementById('inp-desc').value,
+                recurrence: document.getElementById('inp-recurring').value,
                 dateKey: formatDate(selectedDate)
             };
 
