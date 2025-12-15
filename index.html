@@ -5,6 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    
+    <!-- Smooth Status Bar Blending -->
+    <meta name="theme-color" content="#eef2f3" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#0f2027" media="(prefers-color-scheme: dark)">
+
     <title>AirLink</title>
     
     <!-- Phosphor Icons -->
@@ -17,6 +22,7 @@
             --success: #34C759;   /* To Do (Green) */
             --danger: #FF3B30;    /* Payment (Red) */
             --warning: #FFCC00;   /* Event (Yellow) */
+            --holiday: #AF52DE;   /* Holidays (Purple) */
             
             --glass-bg: rgba(255, 255, 255, 0.95);
             --glass-border: rgba(255, 255, 255, 0.5);
@@ -47,7 +53,7 @@
             font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             user-select: none;
             touch-action: manipulation;
-            -webkit-font-smoothing: antialiased; /* Crisper text on iOS */
+            -webkit-font-smoothing: antialiased;
         }
 
         body {
@@ -99,24 +105,6 @@
             position: relative;
         }
 
-        /* Landscape Mode (Split View) */
-        @media (orientation: landscape) {
-            #app-content {
-                flex-direction: row;
-                padding: 0 20px;
-            }
-            .calendar-section {
-                width: 45%; max-width: 400px; height: 100%;
-                padding-right: 20px !important;
-                display: flex; flex-direction: column; justify-content: flex-start;
-            }
-            .list-section {
-                flex: 1; height: 100%;
-                border-left: 1px solid rgba(128,128,128,0.1);
-                padding-left: 20px !important;
-            }
-        }
-
         /* --- CALENDAR --- */
         .calendar-section {
             flex: 0 0 auto;
@@ -133,6 +121,38 @@
             box-shadow: var(--glass-shadow);
         }
 
+        /* --- LIST --- */
+        .list-section {
+            flex: 1 1 auto;
+            overflow-y: auto;
+            padding: 0 16px 100px;
+            overscroll-behavior-y: contain;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* Landscape Mode (Split View) */
+        @media (orientation: landscape) {
+            #app-content {
+                flex-direction: row;
+                padding: 0 20px;
+            }
+            .calendar-section {
+                width: 45%; max-width: 400px; height: 100%;
+                padding-right: 20px !important;
+                display: flex; flex-direction: column; justify-content: flex-start;
+                overflow-y: auto; /* Scrollable if screen is short */
+                padding-bottom: 20px !important;
+            }
+            .list-section {
+                flex: 1; height: 100%;
+                border-left: 1px solid rgba(128,128,128,0.1);
+                padding-left: 20px !important;
+                overflow-y: auto;
+            }
+            .calendar-card { padding: 12px; }
+        }
+
+        /* Calendar Elements */
         .calendar-header {
             display: flex; justify-content: space-between; align-items: center;
             margin-bottom: 10px;
@@ -167,15 +187,7 @@
         .dots-container { display: flex; gap: 2px; position: absolute; bottom: 3px; }
         .dot { width: 3px; height: 3px; border-radius: 50%; }
 
-        /* --- LIST --- */
-        .list-section {
-            flex: 1 1 auto;
-            overflow-y: auto;
-            padding: 0 16px 100px;
-            overscroll-behavior-y: contain;
-            -webkit-overflow-scrolling: touch;
-        }
-
+        /* List Elements */
         .list-header {
             font-size: 0.75rem; font-weight: 600; color: var(--text-secondary);
             margin: 4px 0 8px 4px; text-transform: uppercase; letter-spacing: 0.5px;
@@ -189,10 +201,11 @@
             border-radius: 14px;
             margin-bottom: 8px;
             display: flex; align-items: center;
-            transition: all 0.25s ease;
+            transition: all 0.2s ease; /* Faster transition */
             min-height: 52px;
             position: relative;
             cursor: pointer;
+            will-change: transform; /* Hardware accel */
         }
 
         .event-card:active { transform: scale(0.98); background: rgba(255,255,255,0.5); }
@@ -204,6 +217,13 @@
         .event-card.done .event-title { text-decoration: line-through; }
         .event-card.done .type-indicator { background: var(--text-muted) !important; }
 
+        .event-card.holiday {
+            background: rgba(175, 82, 222, 0.1);
+            border-color: rgba(175, 82, 222, 0.3);
+            cursor: default;
+        }
+        .event-card.holiday:active { transform: none; }
+
         .type-indicator {
             width: 3px; height: 24px; border-radius: 2px;
             margin-right: 12px; background: var(--primary); flex-shrink: 0;
@@ -212,6 +232,7 @@
         .time-box {
             display: flex; flex-direction: column;
             margin-right: 12px; min-width: 40px; flex-shrink: 0;
+            align-items: center;
         }
         .time-text { font-weight: 600; font-size: 0.85rem; font-variant-numeric: tabular-nums; }
         .time-ampm { font-size: 0.6rem; color: var(--text-secondary); text-transform: uppercase; }
@@ -227,7 +248,7 @@
             background: rgba(30,30,30,0.95); color: white;
             padding: 12px 24px; border-radius: 30px;
             font-size: 0.9rem; font-weight: 500;
-            z-index: 1000; transition: top 0.4s cubic-bezier(0.19, 1, 0.22, 1);
+            z-index: 1000; transition: top 0.3s cubic-bezier(0.19, 1, 0.22, 1); /* Faster toast */
             backdrop-filter: blur(10px);
             box-shadow: 0 10px 30px rgba(0,0,0,0.3);
             display: flex; align-items: center; gap: 8px;
@@ -249,9 +270,13 @@
             text-align: center;
             box-shadow: 0 15px 40px rgba(0,0,0,0.2);
             border: 1px solid var(--glass-border);
+            animation: popIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
+        @keyframes popIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
         .confirm-actions { display: flex; gap: 10px; margin-top: 20px; }
-        .btn-act { flex:1; padding:12px; border-radius:12px; border:none; font-weight:600; cursor:pointer; font-size: 0.95rem; }
+        .btn-act { flex:1; padding:12px; border-radius:12px; border:none; font-weight:600; cursor:pointer; font-size: 0.95rem; transition: transform 0.1s; }
+        .btn-act:active { transform: scale(0.96); }
         .btn-cancel { background: rgba(120,120,128,0.1); color: var(--text-main); }
         .btn-danger { background: var(--danger); color: white; }
 
@@ -266,7 +291,7 @@
             background: var(--text-main); color: var(--glass-bg); border: none;
             box-shadow: 0 8px 24px rgba(0,0,0,0.25); font-size: 24px;
             display: flex; align-items: center; justify-content: center;
-            transition: transform 0.3s; cursor: pointer;
+            transition: transform 0.2s; cursor: pointer; /* Faster FAB */
         }
         .fab-option {
             width: 44px; height: 44px; border-radius: 22px; border: none; color: white;
@@ -284,8 +309,8 @@
         .fab-container.open .fab-option { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
         .fab-container.open .fab-option::after { opacity: 1; }
         
-        .btn-payment { background: var(--danger); transition-delay: 0.1s; }
-        .btn-todo { background: var(--success); transition-delay: 0.05s; }
+        .btn-payment { background: var(--danger); transition-delay: 0.05s; } /* Faster stagger */
+        .btn-todo { background: var(--success); transition-delay: 0.03s; }
         .btn-event { background: var(--warning); transition-delay: 0s; }
 
         .modal-overlay {
@@ -298,7 +323,8 @@
             width: 100%; max-width: 500px; background: #fff;
             border-top-left-radius: 24px; border-top-right-radius: 24px;
             padding: 24px 24px calc(24px + var(--safe-bottom));
-            animation: slideUp 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
+            animation: slideUp 0.25s cubic-bezier(0.165, 0.84, 0.44, 1); /* Faster slide */
+            will-change: transform;
         }
         @media (prefers-color-scheme: dark) { .modal-sheet { background: #1c1c1e; } }
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
@@ -312,41 +338,29 @@
             font-family: inherit;
         }
 
-        /* Time Input Centering & Uniformity */
         input[type="time"].modal-input {
             text-align: center;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            line-height: 52px; /* Matches height for vertical alignment */
+            display: flex; align-items: center; justify-content: center;
+            line-height: 52px;
         }
-        /* Remove default time icon on webkit if preferred, or keep standard */
-        input[type="time"]::-webkit-calendar-picker-indicator {
-            background: transparent;
-            color: var(--text-secondary);
-            cursor: pointer;
-            height: 100%; width: 100%;
-            position: absolute; left: 0; top: 0; opacity: 0; /* Make invisible but clickable */
-        }
-        /* Relative positioning for the input wrapper effect */
         .time-input-wrapper { position: relative; width: 100%; }
-
 
         .hidden-field { display: none; }
 
         .modal-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px; }
-        .btn-save { padding: 16px; background: var(--primary); color: white; border: none; border-radius: 14px; font-size: 1rem; font-weight: 600; cursor: pointer; grid-column: span 2; }
+        .btn-save { padding: 16px; background: var(--primary); color: white; border: none; border-radius: 14px; font-size: 1rem; font-weight: 600; cursor: pointer; grid-column: span 2; transition: transform 0.1s; }
+        .btn-save:active { transform: scale(0.98); }
         
-        /* Edit Mode Buttons */
-        .btn-toggle-status { padding: 16px; background: var(--success); color: white; border: none; border-radius: 14px; font-size: 1rem; font-weight: 600; cursor: pointer; display: none; }
-        .btn-delete { padding: 16px; background: rgba(255, 59, 48, 0.1); color: var(--danger); border: none; border-radius: 14px; font-size: 1rem; font-weight: 600; display: none; cursor: pointer; }
+        .btn-toggle-status { padding: 16px; background: var(--success); color: white; border: none; border-radius: 14px; font-size: 1rem; font-weight: 600; cursor: pointer; display: none; transition: transform 0.1s; }
+        .btn-toggle-status:active { transform: scale(0.98); }
         
-        /* Edit Mode Layout */
+        .btn-delete { padding: 16px; background: rgba(255, 59, 48, 0.1); color: var(--danger); border: none; border-radius: 14px; font-size: 1rem; font-weight: 600; display: none; cursor: pointer; transition: transform 0.1s; }
+        .btn-delete:active { transform: scale(0.98); }
+        
         .modal-actions.edit-mode { grid-template-columns: 1fr 1fr; }
         .modal-actions.edit-mode .btn-save { grid-column: span 2; order: 3; }
         .modal-actions.edit-mode .btn-delete { display: block; order: 1; }
         .modal-actions.edit-mode .btn-toggle-status { display: block; order: 2; }
-
 
     </style>
 </head>
@@ -421,7 +435,6 @@
                     <input type="time" id="inp-time" class="modal-input" required>
                 </div>
                 
-                <!-- Recurring Field (Only for Payments) -->
                 <div id="div-recurring" class="hidden-field">
                     <select id="inp-recurring" class="modal-input">
                         <option value="none">One-time Payment</option>
@@ -469,6 +482,61 @@
         let selectedDate = new Date();
         let currentUser = null;
         let unsubscribe = null;
+
+        /* --- EXPANDED PH HOLIDAY LOGIC (Fixed + Movable) --- */
+        function getHolidays(year) {
+            const fixed = [
+                // Regular
+                { m: 0, d: 1, name: "New Year's Day" },
+                { m: 3, d: 9, name: "Araw ng Kagitingan" },
+                { m: 4, d: 1, name: "Labor Day" },
+                { m: 5, d: 12, name: "Independence Day" },
+                { m: 10, d: 30, name: "Bonifacio Day" },
+                { m: 11, d: 25, name: "Christmas Day" },
+                { m: 11, d: 30, name: "Rizal Day" },
+                // Special Non-Working
+                { m: 1, d: 25, name: "EDSA Revolution" },
+                { m: 7, d: 21, name: "Ninoy Aquino Day" },
+                { m: 10, d: 1, name: "All Saints' Day" },
+                { m: 11, d: 8, name: "Immaculate Conception" },
+                { m: 11, d: 31, name: "Last Day of the Year" },
+                // Additional Special
+                { m: 10, d: 2, name: "All Souls' Day" },
+                { m: 11, d: 24, name: "Christmas Eve" }
+            ];
+
+            // National Heroes Day: Last Monday of August
+            let augLastMon = new Date(year, 7, 31);
+            while (augLastMon.getDay() !== 1) augLastMon.setDate(augLastMon.getDate() - 1);
+            fixed.push({ m: 7, d: augLastMon.getDate(), name: "National Heroes Day" });
+
+            // Easter Calculation
+            const f = Math.floor, y = year;
+            const G = y % 19;
+            const C = f(y / 100);
+            const H = (C - f(C / 4) - f((8 * C + 13) / 25) + 19 * G + 15) % 30;
+            const I = H - f(H / 28) * (1 - f(29 / (H + 1)) * f((21 - G) / 11));
+            const J = (y + f(y / 4) + I + 2 - C + f(C / 4)) % 7;
+            const L = I - J;
+            const month = 3 + f((L + 40) / 44);
+            const day = L + 28 - 31 * f(month / 4);
+            
+            const easter = new Date(year, month - 1, day);
+            const maundy = new Date(easter); maundy.setDate(easter.getDate() - 3);
+            const goodFri = new Date(easter); goodFri.setDate(easter.getDate() - 2);
+            const blackSat = new Date(easter); blackSat.setDate(easter.getDate() - 1);
+
+            fixed.push({ m: maundy.getMonth(), d: maundy.getDate(), name: "Maundy Thursday" });
+            fixed.push({ m: goodFri.getMonth(), d: goodFri.getDate(), name: "Good Friday" });
+            fixed.push({ m: blackSat.getMonth(), d: blackSat.getDate(), name: "Black Saturday" });
+
+            return fixed;
+        }
+
+        function getHolidayForDate(d) {
+            const hols = getHolidays(d.getFullYear());
+            return hols.find(h => h.m === d.getMonth() && h.d === d.getDate());
+        }
 
         function showToast(msg, icon="ph-check-circle") {
             const el = document.getElementById('toast');
@@ -530,6 +598,8 @@
             const daysInMonth = new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 0).getDate();
             const prevMonthLast = new Date(viewDate.getFullYear(), viewDate.getMonth(), 0).getDate();
 
+            const yearHols = getHolidays(viewDate.getFullYear());
+
             for(let i=0; i<firstDay; i++) {
                 grid.innerHTML += `<div class="day other-month">${prevMonthLast - firstDay + 1 + i}</div>`;
             }
@@ -541,15 +611,24 @@
                 
                 const thisDate = new Date(viewDate.getFullYear(), viewDate.getMonth(), i);
                 const key = formatDate(thisDate);
+                const isHoliday = yearHols.find(h => h.m === thisDate.getMonth() && h.d === thisDate.getDate());
 
                 if(thisDate.toDateString() === new Date().toDateString()) d.classList.add('today');
                 if(thisDate.toDateString() === selectedDate.toDateString()) d.classList.add('selected');
 
+                const dots = document.createElement('div');
+                dots.className = 'dots-container';
+
+                if(isHoliday) {
+                    const hDot = document.createElement('div');
+                    hDot.className = 'dot';
+                    hDot.style.background = 'var(--holiday)';
+                    dots.appendChild(hDot);
+                }
+
                 const dayEvts = events.filter(e => e.dateKey === key && e.status !== 'done');
                 if(dayEvts.length > 0) {
-                    const dots = document.createElement('div');
-                    dots.className = 'dots-container';
-                    dayEvts.slice(0,3).forEach(evt => {
+                    dayEvts.slice(0,2).forEach(evt => {
                         const dot = document.createElement('div');
                         dot.className = 'dot';
                         if(evt.type==='payment') dot.style.background='var(--danger)';
@@ -557,8 +636,9 @@
                         else dot.style.background='var(--warning)';
                         dots.appendChild(dot);
                     });
-                    d.appendChild(dots);
                 }
+                
+                if(dots.children.length > 0) d.appendChild(dots);
 
                 d.onclick = () => { selectedDate = thisDate; render(); };
                 grid.appendChild(d);
@@ -572,13 +652,31 @@
             document.getElementById('selected-date-label').textContent = selectedDate.toLocaleDateString('en-US', {weekday:'long', month:'long', day:'numeric'});
             
             const key = formatDate(selectedDate);
+            
+            const holiday = getHolidayForDate(selectedDate);
+            if(holiday) {
+                const holCard = document.createElement('div');
+                holCard.className = 'event-card holiday';
+                holCard.innerHTML = `
+                    <div class="type-indicator" style="background:var(--holiday)"></div>
+                    <div class="time-box">
+                        <i class="ph-bold ph-flag" style="font-size:1.2rem; color:var(--holiday)"></i>
+                    </div>
+                    <div class="event-info">
+                        <div class="event-title">🇵🇭 ${holiday.name}</div>
+                        <div class="event-desc">Holiday</div>
+                    </div>
+                `;
+                list.appendChild(holCard);
+            }
+
             const dayEvents = events.filter(e => e.dateKey === key).sort((a,b) => {
                 if (a.status === 'done' && b.status !== 'done') return 1;
                 if (a.status !== 'done' && b.status === 'done') return -1;
                 return a.time.localeCompare(b.time);
             });
 
-            if(dayEvents.length === 0) {
+            if(dayEvents.length === 0 && !holiday) {
                 list.innerHTML = `<div style="text-align:center; padding:30px; opacity:0.4; font-size:0.9rem;">No items</div>`;
                 return;
             }
@@ -626,11 +724,9 @@
         document.body.onclick = () => fabContainer.classList.remove('open');
         window.closeModal = () => modal.classList.remove('active');
 
-        // Added Attempt Close Logic
         window.attemptCloseModal = () => {
             const id = document.getElementById('inp-id').value;
             const title = document.getElementById('inp-title').value;
-            // If adding new item (no ID) AND title has text
             if(!id && title.trim().length > 0) {
                 showConfirm("Discard Entry?", "Changes will be lost.", () => {
                     closeModal();
@@ -658,7 +754,6 @@
             document.getElementById('inp-time').value = isEdit ? existingEvent.time : "";
             document.getElementById('inp-desc').value = isEdit ? existingEvent.desc : "";
             
-            // Recurrence Field Logic
             const recurDiv = document.getElementById('div-recurring');
             const recurInp = document.getElementById('inp-recurring');
             
@@ -677,25 +772,27 @@
             if (isEdit) {
                 actionsDiv.classList.add('edit-mode');
                 
-                // Config Delete
                 delBtn.onclick = () => {
                     showConfirm("Delete Item", "This action cannot be undone.", async () => {
-                        await deleteDoc(doc(db, `artifacts/${firebaseConfig.appId}/users/${currentUser.uid}/events`, existingEvent.id));
+                        // OPTIMISTIC UI: Close first
                         closeModal();
                         showToast("Item Deleted", "ph-trash");
+                        // Then delete
+                        await deleteDoc(doc(db, `artifacts/${firebaseConfig.appId}/users/${currentUser.uid}/events`, existingEvent.id));
                     });
                 };
                 
-                // Config Status Toggle
                 const isDone = existingEvent.status === 'done';
                 statusBtn.textContent = isDone ? "Mark Active" : "Mark Done";
                 statusBtn.style.background = isDone ? "var(--text-secondary)" : "var(--success)";
                 
                 statusBtn.onclick = async () => {
+                     // OPTIMISTIC UI: Close first
                      const newStatus = isDone ? 'active' : 'done';
-                     await updateDoc(doc(db, `artifacts/${firebaseConfig.appId}/users/${currentUser.uid}/events`, existingEvent.id), { status: newStatus });
                      closeModal();
                      showToast(newStatus === 'done' ? "Marked Done" : "Marked Active");
+                     // Then update
+                     await updateDoc(doc(db, `artifacts/${firebaseConfig.appId}/users/${currentUser.uid}/events`, existingEvent.id), { status: newStatus });
                 };
 
             } else {
@@ -717,19 +814,24 @@
                 dateKey: formatDate(selectedDate)
             };
 
+            // OPTIMISTIC UI: Close first
+            closeModal();
+            const actionMsg = id ? "Changes Saved" : "Item Added";
+            showToast(actionMsg);
+
             try {
                 if (id) {
                     await updateDoc(doc(db, `artifacts/${firebaseConfig.appId}/users/${currentUser.uid}/events`, id), data);
-                    showToast("Changes Saved");
                 } else {
                     data.status = 'active';
                     data.createdAt = new Date().toISOString();
                     await addDoc(collection(db, `artifacts/${firebaseConfig.appId}/users/${currentUser.uid}/events`), data);
-                    showToast("Item Added");
                 }
                 e.target.reset();
-                closeModal();
-            } catch(err) { showToast("Error Saving", "ph-warning"); console.error(err); }
+            } catch(err) { 
+                showToast("Error Saving", "ph-warning"); 
+                console.error(err); 
+            }
         };
 
         const formatDate = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
