@@ -5,35 +5,44 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    
-    <!-- Smooth Status Bar Blending -->
-    <meta name="theme-color" content="#eef2f3" media="(prefers-color-scheme: light)">
-    <meta name="theme-color" content="#0f2027" media="(prefers-color-scheme: dark)">
+    <meta name="description" content="A personal organizer for events, todos, and payments in the Philippines.">
+    <meta name="theme-color" content="#ffead7" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#404461" media="(prefers-color-scheme: dark)">
 
     <title>AirLink</title>
 
-    <!-- PWA Manifest & Icons -->
     <link rel="manifest" href="manifest.json">
     <link rel="icon" type="image/png" href="favicon.png">
     <link rel="apple-touch-icon" href="icon-192.png">
     
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
     <!-- Phosphor Icons -->
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
-
-    <!-- External Styles -->
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
-    <div id="toast" class="toast">
-        <i class="ph-bold ph-check-circle" id="toast-icon"></i> 
+    <!-- LOADING SCREEN -->
+    <div id="loading-overlay" class="loading-overlay">
+        <div class="spinner"></div>
+        <div class="brand-font" style="margin-top:16px; font-size:1.5rem; color:var(--primary);">AirLink</div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="toast" role="alert" aria-live="polite">
+        <i class="ph-bold ph-check-circle" id="toast-icon" aria-hidden="true"></i> 
         <span id="toast-msg">Notification</span>
     </div>
 
-    <div class="confirm-overlay" id="confirm-modal">
+    <!-- Confirm Modal -->
+    <div class="confirm-overlay" id="confirm-modal" role="dialog" aria-modal="true">
         <div class="confirm-box">
-            <div style="font-weight:700; font-size:1.1rem; margin-bottom:8px;" id="confirm-title">Confirm</div>
-            <div style="font-size:0.9rem; color:var(--text-secondary);" id="confirm-text">Are you sure?</div>
+            <h2 id="confirm-title">Confirm</h2>
+            <p id="confirm-text">Are you sure?</p>
             <div class="confirm-actions">
                 <button class="btn-act btn-cancel" id="confirm-cancel">Cancel</button>
                 <button class="btn-act btn-danger" id="confirm-ok">Confirm</button>
@@ -41,72 +50,249 @@
         </div>
     </div>
 
-    <header>
-        <div class="brand">
-            <img src="icon-192.png" alt="AirLink Logo" class="app-logo"> AirLink
-        </div>
-        <button id="auth-btn" class="auth-btn">Sign In</button>
-    </header>
+    <!-- AUTH LANDING PAGE -->
+    <section id="auth-landing" class="auth-section hidden">
+        <div class="auth-container">
+            <div class="brand-large">
+                <img src="icon-192.png" alt="AirLink Logo" class="app-logo-large">
+                <h1 class="brand-font">AirLink</h1>
+                <p>Your daily companion.</p>
+            </div>
 
-    <div id="app-content">
-        <div class="calendar-section">
-            <div class="calendar-card">
-                <div class="calendar-header">
-                    <div class="month-label" id="month-display">...</div>
-                    <div style="display:flex; gap:8px;">
-                        <button class="nav-btn" id="prev-month"><i class="ph-bold ph-caret-left"></i></button>
-                        <button class="nav-btn" id="next-month"><i class="ph-bold ph-caret-right"></i></button>
+            <!-- Login Form -->
+            <form id="login-form" class="auth-form active">
+                <div class="input-group">
+                    <input type="email" id="login-email" class="auth-input" placeholder="Email" required autocomplete="email">
+                    <i class="ph ph-envelope input-icon"></i>
+                </div>
+                <div class="input-group">
+                    <input type="password" id="login-pass" class="auth-input" placeholder="Password" required autocomplete="current-password">
+                    <i class="ph ph-lock input-icon"></i>
+                    <button type="button" class="toggle-pass" data-target="login-pass" aria-label="Toggle Password">
+                        <i class="ph ph-eye"></i>
+                    </button>
+                </div>
+                <div style="text-align:right; margin-bottom:16px;">
+                    <button type="button" class="text-link small" id="btn-forgot-pass">Forgot Password?</button>
+                </div>
+                <button type="submit" class="btn-primary-auth">Sign In</button>
+                <div class="auth-divider"><span>OR</span></div>
+                <button type="button" class="btn-google-auth" id="btn-google-login">
+                    <i class="ph-bold ph-google-logo"></i> Continue with Google
+                </button>
+                <div class="auth-footer">
+                    <span class="footer-text">Don't have an account?</span>
+                    <button type="button" class="btn-outline-auth" id="btn-show-register">Create Account</button>
+                </div>
+            </form>
+
+            <!-- Register Form -->
+            <form id="register-form" class="auth-form">
+                <div class="input-group">
+                    <input type="email" id="reg-email" class="auth-input" placeholder="Email" required autocomplete="email">
+                    <i class="ph ph-envelope input-icon"></i>
+                </div>
+                <div class="input-group">
+                    <input type="password" id="reg-pass" class="auth-input" placeholder="Password" required autocomplete="new-password">
+                    <i class="ph ph-lock input-icon"></i>
+                    <button type="button" class="toggle-pass" data-target="reg-pass">
+                        <i class="ph ph-eye"></i>
+                    </button>
+                </div>
+                <button type="submit" class="btn-primary-auth">Create Account</button>
+                <div class="auth-footer">
+                    <span class="footer-text">Already have an account?</span>
+                    <button type="button" class="btn-outline-auth" id="btn-show-login">Sign In</button>
+                </div>
+            </form>
+
+            <!-- Forgot Password -->
+            <form id="forgot-form" class="auth-form">
+                <p class="auth-helper-text">Enter your email to receive a password reset link.</p>
+                <div class="input-group">
+                    <input type="email" id="forgot-email" class="auth-input" placeholder="Email" required>
+                    <i class="ph ph-envelope input-icon"></i>
+                </div>
+                <button type="submit" class="btn-primary-auth">Send Reset Link</button>
+                <div class="auth-footer">
+                    <button type="button" class="btn-outline-auth" id="btn-back-login">Back to Sign In</button>
+                </div>
+            </form>
+        </div>
+    </section>
+
+    <!-- MAIN APP WRAPPER -->
+    <div id="main-app-wrapper" class="hidden">
+        <!-- Header -->
+        <header>
+            <div class="brand">
+                <img src="icon-192.png" alt="AirLink Logo" class="app-logo"> 
+                <span class="brand-font">AirLink</span>
+            </div>
+            
+            <div class="header-actions">
+                <button id="today-btn" class="today-btn">Today</button>
+
+                <!-- Settings Menu Trigger -->
+                <div class="settings-container">
+                    <button id="settings-btn" class="icon-btn" aria-label="Settings">
+                        <i class="ph-bold ph-gear"></i>
+                    </button>
+                    <!-- Dropdown Menu -->
+                    <div id="settings-dropdown" class="settings-dropdown hidden">
+                        <div class="user-info">
+                            <span class="label">Signed in as</span>
+                            <span id="user-email-display" class="email">user@example.com</span>
+                        </div>
+                        <div class="menu-divider"></div>
+                        <button id="logout-btn" class="menu-item danger">
+                            <i class="ph-bold ph-sign-out"></i> Sign Out
+                        </button>
                     </div>
                 </div>
-                <div class="weekdays">
-                    <div>Su</div><div>Mo</div><div>Tu</div><div>We</div><div>Th</div><div>Fr</div><div>Sa</div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main id="app-content">
+            <!-- Calendar -->
+            <section class="calendar-section">
+                <div class="calendar-card">
+                    <div class="calendar-header">
+                        <h2 class="month-label" id="month-display">...</h2>
+                        <div class="nav-group">
+                            <button class="nav-btn" id="prev-month"><i class="ph-bold ph-caret-left"></i></button>
+                            <button class="nav-btn" id="next-month"><i class="ph-bold ph-caret-right"></i></button>
+                        </div>
+                    </div>
+                    <div class="weekdays">
+                        <div>Su</div><div>Mo</div><div>Tu</div><div>We</div><div>Th</div><div>Fr</div><div>Sa</div>
+                    </div>
+                    <div class="days-grid" id="days-grid"></div>
                 </div>
-                <div class="days-grid" id="days-grid"></div>
-            </div>
-        </div>
+            </section>
 
-        <div class="list-section">
-            <div class="list-header" id="selected-date-label">Today</div>
-            <div id="events-list"></div>
+            <!-- List -->
+            <section class="list-section">
+                <h3 class="list-header" id="selected-date-label">Today</h3>
+                <div id="events-list"></div>
+            </section>
+        </main>
+
+        <!-- FAB -->
+        <div class="fab-container" id="fab-container">
+            <button class="fab-main" id="fab-main"><i class="ph-bold ph-plus"></i></button>
+            <button class="fab-option btn-payment" data-type="payment" data-label="Payment"><i class="ph-bold ph-currency-dollar"></i></button>
+            <button class="fab-option btn-todo" data-type="todo" data-label="ToDo"><i class="ph-bold ph-check-square"></i></button>
+            <button class="fab-option btn-event" data-type="event" data-label="Event"><i class="ph-bold ph-calendar"></i></button>
         </div>
     </div>
 
-    <div class="fab-container" id="fab-container">
-        <button class="fab-main" id="fab-main"><i class="ph-bold ph-plus"></i></button>
-        <button class="fab-option btn-payment" data-type="payment" data-label="Payment"><i class="ph-bold ph-currency-dollar"></i></button>
-        <button class="fab-option btn-todo" data-type="todo" data-label="To Do"><i class="ph-bold ph-check-square"></i></button>
-        <button class="fab-option btn-event" data-type="event" data-label="Event"><i class="ph-bold ph-calendar"></i></button>
-    </div>
-
-    <div class="modal-overlay" id="modal">
+    <!-- CREATE/EDIT MODAL -->
+    <div class="modal-overlay" id="modal" role="dialog" aria-modal="true">
         <div class="modal-sheet">
-            <div style="display:flex; justify-content:space-between; margin-bottom:20px; align-items:center;">
-                <span id="modal-title" style="font-weight:700; font-size:1.1rem;">New Item</span>
-                <i class="ph-bold ph-x" onclick="attemptCloseModal()" style="font-size:24px; cursor:pointer; opacity:0.5;"></i>
+            <div class="modal-header">
+                <h2 id="modal-title">New Item</h2>
+                <button class="icon-btn close-btn" onclick="attemptCloseModal()"><i class="ph-bold ph-x"></i></button>
             </div>
-            <form id="event-form">
+
+            <form id="event-form" autocomplete="off">
                 <input type="hidden" id="inp-id">
                 <input type="hidden" id="inp-type">
                 
-                <input type="text" id="inp-title" class="modal-input" placeholder="Title" required>
-                
-                <div class="time-input-wrapper">
-                    <input type="time" id="inp-time" class="modal-input" required>
-                </div>
-                
-                <div id="div-recurring" class="hidden-field">
-                    <select id="inp-recurring" class="modal-input">
-                        <option value="none">One-time Payment</option>
-                        <option value="Weekly">Weekly</option>
-                        <option value="Monthly">Monthly</option>
-                        <option value="Yearly">Yearly</option>
-                    </select>
+                <!-- Common Fields -->
+                <div class="form-section">
+                    <input type="text" id="inp-title" class="modal-input large-text" placeholder="Title" required>
+                    <div class="time-row">
+                        <div class="time-input-wrapper">
+                            <i class="ph-bold ph-clock time-icon"></i>
+                            <input type="time" id="inp-time" class="modal-input" required>
+                        </div>
+                    </div>
                 </div>
 
-                <input type="text" id="inp-desc" class="modal-input" placeholder="Details (Optional)">
+                <!-- Event Specific: Location -->
+                <div id="section-event-details" class="form-section hidden-section">
+                    <label class="section-label">Location</label>
+                    <div class="input-with-icon">
+                        <i class="ph-bold ph-map-pin"></i>
+                        <input type="text" id="inp-location" class="modal-input" placeholder="Add Location">
+                    </div>
+                </div>
+
+                <!-- Todo Specific: Priority -->
+                <div id="section-todo-details" class="form-section hidden-section">
+                    <label class="section-label">Priority</label>
+                    <div class="chip-group" id="priority-chips">
+                        <button type="button" class="chip" data-val="low">Low</button>
+                        <button type="button" class="chip" data-val="medium">Medium</button>
+                        <button type="button" class="chip" data-val="high">High</button>
+                    </div>
+                    <input type="hidden" id="inp-priority" value="medium">
+                </div>
+
+                <!-- Payment Specific: Recurrence -->
+                <div id="section-payment-options" class="form-section hidden-section">
+                    <label class="section-label">Frequency</label>
+                    
+                    <!-- Frequency Chips -->
+                    <div class="chip-group scrollable" id="freq-chips">
+                        <button type="button" class="chip selected" data-val="one-time">One-time</button>
+                        <button type="button" class="chip" data-val="weekly">Weekly</button>
+                        <button type="button" class="chip" data-val="monthly">Monthly</button>
+                        <button type="button" class="chip" data-val="yearly">Yearly</button>
+                        <button type="button" class="chip" data-val="others">Others</button>
+                    </div>
+                    <input type="hidden" id="inp-freq-main" value="one-time">
+
+                    <!-- Dynamic Sub-Options -->
+                    <div class="recurrence-sub-options">
+                        
+                        <!-- Weekly: Day Selector -->
+                        <div id="sub-weekly" class="sub-group hidden">
+                            <span class="sub-label">Every</span>
+                            <div class="day-circles">
+                                <button type="button" class="day-circle" data-d="0">S</button>
+                                <button type="button" class="day-circle" data-d="1">M</button>
+                                <button type="button" class="day-circle" data-d="2">T</button>
+                                <button type="button" class="day-circle" data-d="3">W</button>
+                                <button type="button" class="day-circle" data-d="4">T</button>
+                                <button type="button" class="day-circle" data-d="5">F</button>
+                                <button type="button" class="day-circle" data-d="6">S</button>
+                            </div>
+                            <input type="hidden" id="inp-freq-weekly-day">
+                        </div>
+
+                        <!-- Monthly: Wheel Picker -->
+                        <div id="sub-monthly" class="sub-group hidden">
+                            <label class="sub-label" style="margin-bottom:8px; display:block; opacity:0.7;">Select Day of Month</label>
+                            <div class="month-wheel-wrapper">
+                                <div class="month-wheel" id="month-wheel-container">
+                                    <!-- Populated by JS -->
+                                </div>
+                            </div>
+                            <input type="hidden" id="inp-freq-monthly-date" value="1">
+                        </div>
+
+                        <!-- Others: Styled Input -->
+                        <div id="sub-others" class="sub-group hidden">
+                            <div class="input-line-wrapper" style="display:flex; align-items:center;">
+                                <span class="sub-label">Every</span>
+                                <input type="number" id="inp-other-interval" class="inline-input" value="3" min="1" max="365">
+                                <span class="sub-label">days</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Description -->
+                <div class="form-section">
+                    <textarea id="inp-desc" class="modal-input area" placeholder="Notes" rows="3"></textarea>
+                </div>
                 
+                <!-- Actions -->
                 <div class="modal-actions" id="modal-actions">
-                    <button type="button" class="btn-delete" id="btn-delete-entry">Delete</button>
+                    <button type="button" class="btn-delete" id="btn-delete-entry"><i class="ph-bold ph-trash"></i></button>
                     <button type="button" class="btn-toggle-status" id="btn-toggle-status">Mark Done</button>
                     <button type="submit" class="btn-save" id="modal-submit-btn">Save</button>
                 </div>
@@ -114,7 +300,6 @@
         </div>
     </div>
 
-    <!-- Application Logic -->
     <script type="module" src="app.js"></script>
 </body>
 </html>
