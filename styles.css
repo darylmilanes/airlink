@@ -246,9 +246,59 @@ header {
 .input-with-icon input { padding-left: 44px; }
 
 .time-row { margin-top: 12px; }
-.time-input-wrapper { position: relative; width: 100%; }
-.time-icon { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); pointer-events: none; opacity: 0.5; }
-.time-input-wrapper input { padding-left: 40px; }
+
+/* --- UPDATED TIME FIELD STYLES --- */
+.time-input-wrapper { 
+    position: relative; 
+    width: 100%; 
+    max-width: 100%; 
+}
+
+/* Custom Icon Positioning */
+.time-icon { 
+    position: absolute; 
+    left: 16px; 
+    top: 50%; 
+    transform: translateY(-50%); 
+    pointer-events: none; 
+    opacity: 0.5; 
+    z-index: 2; /* Sit on top of input */
+}
+
+/* Time Input Unified Styling 
+   - Removes native iOS/Android styling 
+   - Enforces 100% width relative to container
+   - Hides native chevrons 
+*/
+.time-input-wrapper input[type="time"] {
+    appearance: none;
+    -webkit-appearance: none;
+    display: block;
+    width: 100%;
+    height: 50px;
+    background: rgba(64,68,97,0.06);
+    border: none;
+    border-radius: 12px;
+    padding-left: 44px; /* Space for custom icon */
+    padding-right: 16px;
+    font-size: 1rem;
+    color: var(--text-main);
+    font-family: 'Inter', sans-serif;
+    box-sizing: border-box; /* Ensures padding doesn't increase width */
+}
+
+/* Hide Android/Chrome Chevron */
+.time-input-wrapper input[type="time"]::-webkit-calendar-picker-indicator {
+    display: none;
+    -webkit-appearance: none;
+}
+
+/* Force text alignment for iOS which defaults to center sometimes */
+.time-input-wrapper input[type="time"]::-webkit-date-and-time-value {
+    text-align: left;
+}
+/* --------------------------------- */
+
 
 /* Chips (Priority & Frequency) */
 .chip-group { display: flex; gap: 8px; flex-wrap: wrap; }
